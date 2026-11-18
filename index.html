@@ -1327,7 +1327,7 @@ function letter(){
     '<tr><td><b>Risk factors</b></td><td>Smoking: '+d.smoke+(d.tob.length?' ('+esc(d.tob.join(', '))+')':'')+'; chewing: '+d.chew+(d.chewT.length?' ('+esc(d.chewT.join(', '))+')':'')+'; alcohol: '+d.alcohol+'; family history: '+d.famhx+'</td></tr>'+
     '<tr><td><b>Red flags</b></td><td>'+(d.flags.length?esc(d.flags.join('; ')):'None recorded')+'</td></tr>'+
     '<tr><td><b>Lesions marked</b></td><td>'+(ann.length?ann.map(esc).join('<br>'):'None outlined')+'</td></tr>'+
-    (r.minor?'':'<tr><td><b>Screening signal</b></td><td>'+TIERS[r.tier].t+', suspicion '+pct(r.susp)+'% (threshold '+pct(r.threshold)+'%)'+(r.simulated?' <b>[SIMULATED, demo]</b>':' ['+esc(r.model)+']')+'</td></tr>')+
+    (r.minor?'':'<tr><td><b>Screening signal</b></td><td>'+TIERS[r.tier].t+', suspicion '+pct(r.susp)+'% (threshold '+pct(r.threshold)+'%)'+(r.simulated?'  ':' ['+esc(r.model)+']')+'</td></tr>')+
     '<tr><td><b>Clinician action</b></td><td>'+esc((d.decision||{}).action||'not yet recorded')+((d.decision||{}).note?'<br>'+esc(d.decision.note):'')+'</td></tr></table>'+
     '<div class="row" style="margin:12px 0;line-height:0">'+d.imgs.map(function(g){ return '<img src="'+(g.thumb||g.src)+'" alt="" style="width:150px;border-radius:4px">'; }).join('')+'</div>'+
     '<p>Dear colleague, I would be grateful if you could assess this patient. The photographs and outlines are attached in the OralGuard record. The screening signal supports, but does not replace, clinical judgement.</p>'+

@@ -303,7 +303,7 @@ var ICONS = {
 function ic(n,s){ return '<svg viewBox="0 0 24 24" width="'+(s||22)+'" height="'+(s||22)+'" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(ICONS[n]||'')+'</svg>'; }
 
 /* ---------- persistence (localStorage when available, memory otherwise) ---------- */
-var STORE_KEY='oralguard.v1';
+var STORE_KEY='oralguard.v2';
 var canStore=(function(){ try{ localStorage.setItem('__og','1'); localStorage.removeItem('__og'); return true; }catch(e){ return false; } })();
 var DB=null;
 function freshDB(){
@@ -460,14 +460,14 @@ var TIERS = {
   Urgent:{c:'#8E1B12',bg:'var(--redbg)',ic:'‼',t:'Urgent referral suggested',s:'Red flags with a high screening signal. Suggests specialist assessment within 2 weeks.'},
   Refer:{c:'#B42318',bg:'var(--redbg)',ic:'➜',t:'Referral suggested',s:'Screening signal at or above the site threshold, or a red flag is present.'},
   Review:{c:'#A35C00',bg:'var(--amberbg)',ic:'◐',t:'Specialist tele-review suggested',s:'Signal close to the threshold. A specialist reviews the photos remotely before any referral.'},
-  Routine:{c:'#1E7F4F',bg:'var(--greenbg)',ic:'✓',t:'No raised screening signal',s:'Routine recall and prevention advice.'}
+  Routine:{c:'#1E7F4F',bg:'var(--greenbg)',ic:'✓',t:'No raised screening signal',s:'Routine care and prevention advice.'}
 };
 function pathwayFor(tier,d){
   var p=[], now=today(), habits=(d.chew==='Yes'||d.smoke==='Yes'||d.alcohol==='Yes');
   if(tier==='Urgent') p.push({t:'Urgent referral to oral medicine or oral and maxillofacial surgery',w:'Appointment within 14 days',due:addDays(now,14),k:'referral'});
   if(tier==='Refer') p.push({t:'Referral to oral medicine or oral and maxillofacial surgery',w:'Appointment within 4 weeks',due:addDays(now,28),k:'referral'});
   if(tier==='Review') p.push({t:'Remote specialist review of the photos and annotation',w:'Within 7 days',due:addDays(now,7),k:'review'},{t:'Re-examine the lesion after removing local irritants',w:'In 2 to 3 weeks; refer if it persists',due:addDays(now,21),k:'recheck'});
-  if(tier==='Routine') p.push({t:'Routine recall within the adult comprehensive screening programme',w:habits?'Re-screen in 12 months (higher-risk habits)':'Re-screen at the next comprehensive screening',due:addDays(now,habits?365:730),k:'recall'});
+  if(tier==='Routine') p.push({t:'Routine care within the adult comprehensive screening programme',w:habits?'Re-screen in 12 months (higher-risk habits)':'Re-screen at the next comprehensive screening',due:addDays(now,habits?365:730),k:'recall'});
   if(d.chew==='Yes'||d.smoke==='Yes') p.push({t:'Offer tobacco, betel-quid and dokha cessation support',w:'Today, brief advice plus referral to the cessation service if accepted',due:now,k:'cessation'});
   if(d.alcohol==='Yes') p.push({t:'Brief alcohol advice',w:'Today',due:now,k:'advice'});
   p.push({t:'Give the prevention card with monthly mouth self-check',w:'Today, in '+langShort(d.lang),due:now,k:'card'});
@@ -546,6 +546,42 @@ var MSG = {
      c:'{clinic} की ओर से नमस्ते। वेल-चाइल्ड विज़िट में आपके बच्चे के मुँह और दाँतों की जाँच का समय हो गया है। समय लेने के लिए 1, कॉल के लिए 2, या संदेश बंद करने के लिए STOP भेजें।',
      f:'{clinic} की ओर से नमस्ते। हमें अभी तक विशेषज्ञ के पास आपकी मुँह की जाँच का रिकॉर्ड नहीं मिला है। समय लेने में मदद के लिए 1, या संदेश बंद करने के लिए STOP भेजें।'}
 };
+MSG.en.r='Hello from {clinic}. You missed your follow-up mouth check. It is important for your health. Reply 1 to book a new time, 2 for a call back, or STOP to opt out.';
+MSG.ar.r='مرحبًا من {clinic}. فاتك موعد المتابعة لفحص الفم، وهو مهم لصحتك. أرسل 1 لحجز موعد جديد، أو 2 لنتصل بك، أو STOP لإيقاف الرسائل.';
+MSG.bn.r='{clinic} থেকে শুভেচ্ছা। আপনার মুখ-পরীক্ষার ফলো-আপ সাক্ষাৎ বাদ পড়েছে। এটি আপনার স্বাস্থ্যের জন্য গুরুত্বপূর্ণ। নতুন সময় ঠিক করতে 1, ফোন পেতে 2, আর বার্তা বন্ধ করতে STOP লিখুন।';
+MSG.ur.r='{clinic} کی طرف سے سلام۔ آپ منہ کے معائنے کی فالو اپ ملاقات پر نہیں آ سکے۔ یہ آپ کی صحت کے لیے اہم ہے۔ نیا وقت لینے کے لیے 1، کال کے لیے 2، یا پیغامات بند کرنے کے لیے STOP بھیجیں۔';
+MSG.hi.r='{clinic} की ओर से नमस्ते। आपकी मुँह की जाँच की फ़ॉलो-अप मुलाक़ात छूट गई है। यह आपके स्वास्थ्य के लिए ज़रूरी है। नया समय लेने के लिए 1, कॉल के लिए 2, या संदेश बंद करने के लिए STOP भेजें।';
+
+/* ---------- direct follow-up messages (WhatsApp / SMS) ---------- */
+function phoneDigits(p){ var d=String(p||'').replace(/[^\d+]/g,''); if(d.indexOf('00')===0) d='+'+d.slice(2); if(d.charAt(0)==='0') d='+971'+d.slice(1); return d.replace(/[^\d]/g,''); }
+function contactsThisMonth(list){ var cut=addDays(today(),-30); return (list||[]).filter(function(x){ return new Date(x.at)>cut; }).length; }
+function sendPanel(o){
+  if(o.declined) return '<div class="note"><b>Messages stopped.</b> This person declined or opted out; no reminders are sent.</div>';
+  if(!o.consent) return '<div class="note"><b>No consent for reminder messages.</b> Follow up at the next visit, or by phone only if clinically urgent.</div>';
+  var cap=DB.settings.contactCap, used=o.contacts||0, full=used>=cap;
+  var txt=MSG[o.lang][o.kind].replace('{clinic}',DB.settings.siteName);
+  return '<div class="card" style="margin-top:12px"><h3 style="margin-top:0">Send follow-up message</h3>'+
+    '<label class="f" for="smPh">Mobile number</label><input type="tel" inputmode="tel" autocomplete="off" id="smPh" placeholder="+971 50 123 4567" value="'+esc(o.phone||'')+'">'+
+    '<label class="f" for="smL">Language</label><select id="smL" onchange="smLang(\''+o.kind+'\')">'+opts(Object.keys(LANGS).map(function(k){ return [k,langShort(k)]; }),o.lang)+'</select>'+
+    '<label class="f" for="smT">Message (you can edit it)</label><textarea id="smT" rows="5" dir="'+LANGS[o.lang].dir+'" lang="'+o.lang+'">'+esc(txt)+'</textarea>'+
+    '<div class="row" style="margin-top:10px"><button class="btn p" '+(full?'disabled':'')+' onclick="sendMsg(\'wa\',\''+o.ref+'\','+(o.isCase?1:0)+')">Send by WhatsApp</button><button class="btn" '+(full?'disabled':'')+' onclick="sendMsg(\'sms\',\''+o.ref+'\','+(o.isCase?1:0)+')">Send by SMS</button></div>'+
+    '<p class="tiny">Opens WhatsApp or the phone\'s messaging app with the number and message filled in; you press Send there. Contacts in the last 30 days: '+used+' of '+cap+(full?' (limit reached)':'')+'. Each message is written to the data-use log.</p></div>';
+}
+function smLang(kind){ var l=$('smL').value, t=$('smT'); t.value=MSG[l][kind].replace('{clinic}',DB.settings.siteName); t.dir=LANGS[l].dir; t.lang=l; }
+function sendMsg(ch,ref,isCase){
+  var num=phoneDigits($('smPh').value), txt=$('smT').value.trim();
+  if(num.length<9){ toast('Enter a valid mobile number with country code, for example +971 50 123 4567.'); $('smPh').focus(); return; }
+  if(!txt){ toast('The message is empty.'); return; }
+  var url=ch==='wa'?'https://wa.me/'+num+'?text='+encodeURIComponent(txt):'sms:+'+num+'?&body='+encodeURIComponent(txt);
+  var a=document.createElement('a'); a.href=url; if(ch==='wa'){ a.target='_blank'; a.rel='noopener'; } document.body.appendChild(a); a.click(); a.remove();
+  var rec={at:new Date().toISOString(), ch:ch==='wa'?'WhatsApp':'SMS', lang:$('smL').value};
+  if(isCase){ var c=findCase(ref); c.phone=$('smPh').value.trim(); c.contacts=c.contacts||[]; c.contacts.push(rec); }
+  else { var st=DB.outreach[ref]||{s:'Not contacted',n:0}; st.phone=$('smPh').value.trim(); st.contacts=st.contacts||[]; st.contacts.push(rec); st.n=(st.n||0)+1; if(st.s==='Not contacted') st.s='Invited'; DB.outreach[ref]=st; }
+  audit('Follow-up message opened ('+rec.ch+')',ref+': '+langShort(rec.lang),'Follow-up; contact consent');
+  saveDB(); toast(rec.ch+' opened. Press Send there to deliver the message.');
+  setTimeout(function(){ render(); if(isCase) openCase(ref); else openPerson(ref); },400);
+}
+function lastVisitDays(p){ if(p.mo===null||p.mo===undefined) return null; return p.mo*30+(parseInt(p.id.replace(/\D/g,''),10)*7)%30; }
 
 var COMMUNITIES=['Abu Dhabi Island','Mussafah','Khalifa City','Al Ain','Al Dhafra'];
 var SITES=['Right buccal mucosa','Left buccal mucosa','Tongue, right lateral','Tongue, left lateral','Tongue, dorsum','Tongue, ventral and floor of mouth','Hard and soft palate','Upper gingiva and vestibule','Lower gingiva and vestibule','Lips and labial mucosa','Retromolar area','Other / overview'];
@@ -583,11 +619,11 @@ function seedCases(){
     var oca=tier==='Urgent'?base*0.45:base*0.15, opmd=base-oca, ben=(1-base)*(lesion?0.6:0.2);
     var hue=lesion==='mass'||lesion==='red'?350:lesion==='white'?20:8;
     var c={id:'P-'+(1001+i), created:created.toISOString(), seeded:true, consent:{photo:true,data:true,contact:R()<0.85,research:R()<0.6},
-      age:s[0], sex:s[1], lang:s[2], community:s[3], channel:['SMS','WhatsApp','Phone call'][i%3], smoke:s[4], alcohol:s[5], chew:s[6],
+      age:s[0], sex:s[1], lang:s[2], community:s[3], channel:['SMS','WhatsApp','Phone call'][i%3], phone:'+971 50 000 '+(1001+i), smoke:s[4], alcohol:s[5], chew:s[6],
       famhx:R()<0.1?'Yes':'No', prior:'No', flags:tier==='Urgent'?[FLAGS[0],FLAGS[2]]:[],
       imgs:[{src:placeholderImg('Simulated case: no real photo stored',hue),thumb:null,site:SITES[i%SITES.length],ann:lesion?[{type:lesion,shape:'ellipse',pts:[[0.36,0.42],[0.62,0.68]]}]:[],noLesion:!lesion,q:{ok:true}}],
       result:{simulated:true, probs:[(1-base)-ben,ben,opmd,oca], susp:base, susp_sd:0.04, tier:tier, threshold:0.5},
-      decision:{agree:R()<0.85?'Agree':'Disagree', action:tier==='Routine'?'Routine recall':tier==='Review'?'Specialist tele-review':'Refer', note:'', by:'Screener', at:created.toISOString()},
+      decision:{agree:R()<0.85?'Agree':'Disagree', action:tier==='Routine'?'Routine care':tier==='Review'?'Specialist tele-review':'Refer', note:'', by:'Screener', at:created.toISOString()},
       status:s[9], due:addDays(created,{Urgent:14,Refer:28,Review:7,Routine:365}[tier]).toISOString()};
     if(/Reviewed|Outcome|Attended/.test(s[9])) c.review={impression:tier==='Urgent'?'OCA':tier==='Refer'?'OPMD':'Benign',plan:/recall/.test(s[9])?'Recall in 3 months':'Biopsy',by:'Specialist reviewer',at:addDays(created,3).toISOString()};
     if(s[9]==='Outcome recorded') c.outcome={result:tier==='Urgent'?'Oral squamous cell carcinoma (early stage)':'Leukoplakia, mild dysplasia',at:addDays(created,20).toISOString()};
@@ -595,7 +631,7 @@ function seedCases(){
   });
   return out.reverse();
 }
-function caseOverdue(c){ return c.due && new Date(c.due)<today() && !/Outcome recorded|Recall scheduled|Reviewed: recall|Attended/.test(c.status); }
+function caseOverdue(c){ return c.status==='Did not attend' || (c.due && new Date(c.due)<today() && !/Outcome recorded|Recall scheduled|Reviewed: recall|Attended/.test(c.status)); }
 
 /* ---------- simulated outreach population ---------- */
 function mkPeople(){
@@ -621,7 +657,7 @@ function mkPeople(){
     if(kid){ if(p.wcv==='Overdue'){ q.push(['Well-Child Visit oral-health check overdue',2,'gap']); p.fl.push('WCV overdue'); } }
     else if(p.mo===null){ q.push(['Never had an oral examination on record',2,'gap']); p.fl.push('Never screened'); }
     else if(p.mo>(p.chew==='Yes'||p.smoke==='Yes'?12:24)){ q.push(['Oral examination overdue ('+p.mo+' months ago)',1,'gap']); p.fl.push('Overdue'); }
-    if(p.recall==='Missed'){ q.push(['Missed recall appointment',1,'gap']); p.fl.push('Missed recall'); }
+    if(p.recall==='Missed'&&p.mo!==null){ q.push(['Missed recall appointment',1,'gap']); p.fl.push('Missed recall'); }
     if(p.ref==='Not completed'){ q.push(['Earlier referral not completed',3,'gap']); p.fl.push('Referral not completed'); }
     ['smoke','chew'].forEach(function(k){ if(p[k]==='Unknown') q.push([(k==='smoke'?'Smoking':'Chewing habit')+' status unknown (no points; ask at contact)',0,'missing']); });
     p.q=q; p.pr=q.reduce(function(a,b){ return a+b[1]; },0);
@@ -747,7 +783,7 @@ var STEPS=['Consent','Patient','Risk factors','Photos','Annotate','Red flags','R
 function blankCase(){
   DB.seq=(DB.seq||1043)+1;
   return {id:'P-'+DB.seq, created:new Date().toISOString(), consent:{photo:false,data:false,contact:false,research:false,guardian:false}, consentLang:'en',
-    age:'', sex:'', lang:'en', community:'', channel:'SMS', smoke:'Unknown', alcohol:'Unknown', chew:'Unknown', tob:[], chewT:[], famhx:'Unknown', prior:'Unknown', genetic:'Unknown', lastExam:'Unknown', hie:false,
+    age:'', sex:'', lang:'en', community:'', channel:'SMS', phone:'', smoke:'Unknown', alcohol:'Unknown', chew:'Unknown', tob:[], chewT:[], famhx:'Unknown', prior:'Unknown', genetic:'Unknown', lastExam:'Unknown', hie:false,
     imgs:[], flags:[], simMode:'auto', sim:30, result:null, decision:null, status:'Draft'};
 }
 function newScreening(){ S.wiz={step:1, d:blankCase(), pv:0}; }
@@ -813,6 +849,7 @@ function stepPatient(d){
     '<div><label class="f" for="lang">Preferred language</label><select id="lang" onchange="S.wiz.d.lang=this.value">'+opts(Object.keys(LANGS).map(function(k){ return [k,LANGS[k].n]; }),d.lang)+'</select></div>'+
     '<div><label class="f" for="comm">Area of residence</label><select id="comm" onchange="S.wiz.d.community=this.value">'+opts([['','Select']].concat(COMMUNITIES),d.community)+'</select></div>'+
     '<div><label class="f" for="chn">Preferred contact channel</label><select id="chn" onchange="S.wiz.d.channel=this.value">'+opts(['SMS','WhatsApp','Phone call','In person (community health worker)','No contact'],d.channel)+'</select></div>'+
+    '<div><label class="f" for="phn">Mobile number (for follow-up reminders)</label><input type="tel" inputmode="tel" autocomplete="off" id="phn" placeholder="+971 50 123 4567" value="'+esc(d.phone||'')+'" oninput="S.wiz.d.phone=this.value"><div class="tiny">Used only for appointment and follow-up reminders, and only if the reminder consent was given'+(d.consent.contact?'.':'. <b>Reminder consent not given</b>: no messages will be sent.')+'</div></div>'+
     '</div><div id="agen"></div></div>'+
     '<div class="card"><h2>Authorized record data</h2><p class="help">With a data-sharing agreement, the tool can pre-fill screening history, family history and relevant genomic flags from the health information exchange. Every field pulled is labelled with its source and logged.</p>'+
     (d.hie?'<div class="ok">Pulled from the health record (simulated): last oral examination <b>'+esc(d.lastExam)+'</b>; family history of head and neck cancer <b>'+esc(d.famhx)+'</b>; known genetic predisposition <b>'+esc(d.genetic)+'</b>.</div>':
@@ -1285,9 +1322,9 @@ function jet(v){ var f=function(a){ return Math.round(255*clamp(1.5-Math.abs(4*v
 
 /* ---- clinician decision ---- */
 function decisionCard(d,r){
-  var def={Urgent:'Urgent referral',Refer:'Refer',Review:'Specialist tele-review',Routine:'Routine recall',Child:'Well-Child Visit dental referral'}[r.tier];
+  var def={Urgent:'Urgent referral',Refer:'Refer',Review:'Specialist tele-review',Routine:'Routine care',Child:'Well-Child Visit dental referral'}[r.tier];
   var dec=d.decision||{agree:'',action:def,reason:'',note:''};
-  var acts=r.tier==='Child'?['Well-Child Visit dental referral','Same-week dental review']:['Routine recall','Specialist tele-review','Refer','Urgent referral'];
+  var acts=r.tier==='Child'?['Well-Child Visit dental referral','Same-week dental review']:['Routine care','Specialist tele-review','Refer','Urgent referral'];
   if(d.status!=='Draft'&&d.decision) return '<div class="card"><h2>Clinician decision</h2><div class="ok">Saved: <b>'+esc(d.decision.action)+'</b> ('+esc(d.decision.agree)+' with the suggestion)'+(d.decision.reason?'. Reason: '+esc(d.decision.reason):'')+'. Case status: <b>'+esc(d.status)+'</b>.</div>'+
     '<div class="row"><button class="btn" onclick="S.view=\'Letter\';render()">Referral letter</button><button class="btn" onclick="S.view=\'Card\';render()">Prevention card</button><button class="btn" onclick="openCase(\''+d.id+'\')">Open case record</button><button class="btn p" onclick="S.wiz=null;newScreening();go(\'New screening\')">Next patient</button></div></div>';
   return '<div class="card" id="deccard"><h2>Clinician decision</h2><p class="help">You can follow or override the suggestion. Overrides are expected and are used to check the model at this site.</p>'+
@@ -1306,7 +1343,7 @@ function saveDecision(){
   d.decision.by=S.role; d.decision.at=new Date().toISOString();
   var a=d.decision.action;
   d.status=/Routine/.test(a)?'Recall scheduled':/tele-review/.test(a)?'Awaiting specialist review':/Well-Child/.test(a)?'Referred':'Referred';
-  var days={'Routine recall':(d.chew==='Yes'||d.smoke==='Yes')?365:730,'Specialist tele-review':7,'Refer':28,'Urgent referral':14,'Well-Child Visit dental referral':28,'Same-week dental review':7}[a]||28;
+  var days={'Routine care':(d.chew==='Yes'||d.smoke==='Yes')?365:730,'Routine recall':(d.chew==='Yes'||d.smoke==='Yes')?365:730,'Specialist tele-review':7,'Refer':28,'Urgent referral':14,'Well-Child Visit dental referral':28,'Same-week dental review':7}[a]||28;
   d.due=addDays(today(),days).toISOString();
   var rec=JSON.parse(JSON.stringify(d)); var ix=DB.cases.findIndex(function(c){ return c.id===d.id; });
   if(ix>-1) DB.cases[ix]=rec; else DB.cases.unshift(rec);
@@ -1327,7 +1364,7 @@ function letter(){
     '<tr><td><b>Risk factors</b></td><td>Smoking: '+d.smoke+(d.tob.length?' ('+esc(d.tob.join(', '))+')':'')+'; chewing: '+d.chew+(d.chewT.length?' ('+esc(d.chewT.join(', '))+')':'')+'; alcohol: '+d.alcohol+'; family history: '+d.famhx+'</td></tr>'+
     '<tr><td><b>Red flags</b></td><td>'+(d.flags.length?esc(d.flags.join('; ')):'None recorded')+'</td></tr>'+
     '<tr><td><b>Lesions marked</b></td><td>'+(ann.length?ann.map(esc).join('<br>'):'None outlined')+'</td></tr>'+
-    (r.minor?'':'<tr><td><b>Screening signal</b></td><td>'+TIERS[r.tier].t+', suspicion '+pct(r.susp)+'% (threshold '+pct(r.threshold)+'%)'+(r.simulated?'  ':' ['+esc(r.model)+']')+'</td></tr>')+
+    (r.minor?'':'<tr><td><b>Screening signal</b></td><td>'+TIERS[r.tier].t+', suspicion '+pct(r.susp)+'% (threshold '+pct(r.threshold)+'%)'+(r.simulated?'':' ['+esc(r.model)+']')+'</td></tr>')+
     '<tr><td><b>Clinician action</b></td><td>'+esc((d.decision||{}).action||'not yet recorded')+((d.decision||{}).note?'<br>'+esc(d.decision.note):'')+'</td></tr></table>'+
     '<div class="row" style="margin:12px 0;line-height:0">'+d.imgs.map(function(g){ return '<img src="'+(g.thumb||g.src)+'" alt="" style="width:150px;border-radius:4px">'; }).join('')+'</div>'+
     '<p>Dear colleague, I would be grateful if you could assess this patient. The photographs and outlines are attached in the OralGuard record. The screening signal supports, but does not replace, clinical judgement.</p>'+
@@ -1363,8 +1400,8 @@ function cases(){
   var cnt=function(k){ return DB.cases.filter(F[k]).length; };
   var h='<h1>Cases</h1><div class="tabs" role="tablist">'+[['all','All'],['review','Awaiting specialist review'],['open','Open referrals'],['over','Overdue follow-up']].map(function(t){ return '<button role="tab" aria-selected="'+(tab===t[0])+'" class="'+(tab===t[0]?'on':'')+'" onclick="S.sub.cases=\''+t[0]+'\';render()">'+t[1]+' ('+cnt(t[0])+')</button>'; }).join('')+'</div>';
   if(tab==='review') h+='<div class="info">Tele-review lets a specialist look at the photos and outlines remotely, so only people who need an in-person assessment travel. '+(can('review')?'Open a case to record your impression.':'Switch to the Specialist reviewer role to record a review.')+'</div>';
-  h+='<div class="card" style="padding:0"><div class="tw"><table class="t"><thead><tr><th>ID</th><th>Screened</th><th>Patient</th><th>Area</th><th>Suggestion</th><th class="num">Signal</th><th>Status</th><th>Due</th></tr></thead><tbody>'+
-    (list.length?list.map(function(c){ var r=c.result||{}; return '<tr class="cl" onclick="openCase(\''+c.id+'\')"><td><button class="lnk" onclick="event.stopPropagation();openCase(\''+c.id+'\')">'+c.id+'</button></td><td>'+fmtD(c.created)+'</td><td>'+c.age+' y, '+esc((c.sex||'-').charAt(0))+'</td><td>'+esc(c.community||'-')+'</td><td>'+tierChip(r.tier)+'</td><td class="num">'+(r.susp!=null?pct(r.susp)+'%':'-')+'</td><td>'+esc(c.status)+'</td><td>'+(caseOverdue(c)?'<span class="chip r">overdue '+fmtD(c.due)+'</span>':fmtD(c.due))+'</td></tr>'; }).join(''):'<tr><td colspan="8" class="help">No cases in this list.</td></tr>')+
+  h+='<div class="card" style="padding:0"><div class="tw"><table class="t"><thead><tr><th>ID</th><th>Screened</th><th class="num">Days since screening</th><th>Patient</th><th>Area</th><th>Suggestion</th><th class="num">Signal</th><th>Status</th><th>Due</th></tr></thead><tbody>'+
+    (list.length?list.map(function(c){ var r=c.result||{}; return '<tr class="cl" onclick="openCase(\''+c.id+'\')"><td><button class="lnk" onclick="event.stopPropagation();openCase(\''+c.id+'\')">'+c.id+'</button></td><td>'+fmtD(c.created)+'</td><td class="num">'+Math.max(0,daysBetween(c.created,today()))+'</td><td>'+c.age+' y, '+esc((c.sex||'-').charAt(0))+'</td><td>'+esc(c.community||'-')+'</td><td>'+tierChip(r.tier)+'</td><td class="num">'+(r.susp!=null?pct(r.susp)+'%':'-')+'</td><td>'+esc(c.status)+'</td><td>'+(caseOverdue(c)?'<span class="chip r">overdue '+fmtD(c.due)+'</span>':fmtD(c.due))+'</td></tr>'; }).join(''):'<tr><td colspan="9" class="help">No cases in this list.</td></tr>')+
     '</tbody></table></div></div><p class="tiny">Cases marked as seeded are simulated examples. Your own screenings appear at the top.</p>';
   $('app').innerHTML=h;
 }
@@ -1393,15 +1430,24 @@ function caseActions(c){
   if(/Awaiting/.test(c.status)){
     if(!can('review')) return '<div class="note">Waiting for a specialist. <button class="lnk" onclick="setRole(\'Specialist reviewer\',true);openCase(\''+c.id+'\')">Review as specialist</button></div>';
     return '<div class="card" style="margin-top:12px"><h3>Record specialist review</h3><label class="f" for="rvI">Impression from the photos</label><select id="rvI">'+opts(['Healthy / normal variant','Benign','OPMD','OCA suspected','Cannot tell from photos'],'')+'</select>'+
-      '<label class="f" for="rvP">Plan</label><select id="rvP">'+opts(['Refer for in-person assessment and biopsy','Recall in 3 months with new photos','Return to routine recall'],'')+'</select>'+
+      '<label class="f" for="rvP">Plan</label><select id="rvP">'+opts(['Refer for in-person assessment and biopsy','Recall in 3 months with new photos','Return to routine care'],'')+'</select>'+
       '<label class="f" for="rvC">Comment to the screener</label><textarea id="rvC"></textarea><div class="row" style="margin-top:10px"><button class="btn p" onclick="saveReview(\''+c.id+'\')">Save review</button></div></div>';
   }
-  var nx={'Referred':['Appointment booked','Mark appointment booked'],'Reviewed: refer':['Appointment booked','Mark appointment booked'],'Appointment booked':['Attended','Mark attended']};
+  var nx={'Referred':['Appointment booked','Mark appointment booked'],'Reviewed: refer':['Appointment booked','Mark appointment booked'],'Appointment booked':['Attended','Mark attended'],'Did not attend':['Appointment booked','Mark rebooked']};
   var a='';
   if(nx[c.status]) a+='<button class="btn p" onclick="caseStatus(\''+c.id+'\',\''+nx[c.status][0]+'\')">'+nx[c.status][1]+'</button>';
   if(c.status==='Attended') a+='<button class="btn p" onclick="recordOutcome(\''+c.id+'\')">Record outcome</button>';
-  if(/Referred|booked|Reviewed: refer/.test(c.status)) a+='<button class="btn" onclick="toast(\'Reminder preview only: nothing is sent.\');audit(\'Referral reminder prepared\',\''+c.id+'\',\'Follow-up\');saveDB()">Send reminder (preview)</button>';
-  return a?'<div class="row" style="margin-top:12px">'+a+'</div>':'';
+  if(c.status==='Appointment booked'||c.status==='Referred'||c.status==='Reviewed: refer') a+='<button class="btn" onclick="caseStatus(\''+c.id+'\',\'Did not attend\')">Did not attend</button>';
+  var out=a?'<div class="row" style="margin-top:12px">'+a+'</div>':'';
+  var isRef=/Referred|booked|Reviewed: refer|Did not attend/.test(c.status);
+  if(isRef||caseOverdue(c)){
+    var kind=c.age<18?'c':(isRef?'f':'r');
+    out+=(caseOverdue(c)?'<div class="warn" style="margin-top:12px"><b>'+(c.status==='Did not attend'?'Did not attend the appointment.':'Follow-up overdue since '+fmtD(c.due)+'.')+'</b> Send a reminder in the person\'s language.</div>':'')+
+      sendPanel({ref:c.id, isCase:true, kind:kind, lang:c.lang||'en', phone:c.phone||'', consent:!!(c.consent&&c.consent.contact)&&c.channel!=='No contact', contacts:contactsThisMonth(c.contacts)});
+    if(c.contacts&&c.contacts.length) out+='<p class="tiny">Messages sent: '+c.contacts.map(function(x){ return fmtDT(x.at)+' '+x.ch+' ('+langShort(x.lang)+')'; }).join('; ')+'</p>';
+  }
+  return out;
+
 }
 function saveReview(id){
   var c=findCase(id), imp=$('rvI').value, plan=$('rvP').value;
@@ -1428,8 +1474,8 @@ function outreach(){
     '<div class="card" style="margin-top:14px"><div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">'+
       sel('c','Area',COMMUNITIES)+sel('l','Language',Object.keys(LANGS).map(function(k){ return [k,langShort(k)]; }))+sel('a','Group',[['adult','Adults'],['child','Children (Well-Child Visit)']])+sel('g','Care gap',gaps.map(function(x){ return [x,x]; }).concat([['none','No gap']]))+'</div>'+
     '<p class="help" style="margin-top:10px">Contact rules: at most '+set.contactCap+' contacts per person per month; no messages between '+set.quietStart+' and '+set.quietEnd+(set.ramadan?'; Ramadan scheduling on (messages after Iftar)':'')+'. A decline or STOP stops all reminders. <button class="lnk" onclick="outreachSettings()">Change contact rules</button></p></div>'+
-    '<div class="card" style="padding:0"><div class="tw"><table class="t"><thead><tr><th>ID</th><th>Group</th><th>Area</th><th>Language</th><th>Channel</th><th class="num">Priority</th><th>Care gaps</th><th>Status</th></tr></thead><tbody>'+
-    rows.map(function(p){ var st=DB.outreach[p.id]; return '<tr class="cl" onclick="openPerson(\''+p.id+'\')"><td><button class="lnk" onclick="event.stopPropagation();openPerson(\''+p.id+'\')">'+p.id+'</button></td><td>'+p.band+'</td><td>'+p.comm+'</td><td>'+langShort(p.lang)+'</td><td>'+p.ch.replace(' (community health worker)','')+'</td><td class="num"><b>'+p.pr+'</b></td><td>'+(p.fl.map(function(x){ return '<span class="chip '+(/Referral/.test(x)?'r':'a')+'">'+x+'</span>'; }).join('')||'<span class="tiny">none</span>')+'</td><td>'+(st?esc(st.s):'Not contacted')+'</td></tr>'; }).join('')+
+    '<div class="card" style="padding:0"><div class="tw"><table class="t"><thead><tr><th>ID</th><th>Group</th><th>Area</th><th>Language</th><th>Channel</th><th class="num">Priority</th><th class="num">Days since last visit</th><th>Care gaps</th><th>Status</th></tr></thead><tbody>'+
+    rows.map(function(p){ var st=DB.outreach[p.id]; return '<tr class="cl" onclick="openPerson(\''+p.id+'\')"><td><button class="lnk" onclick="event.stopPropagation();openPerson(\''+p.id+'\')">'+p.id+'</button></td><td>'+p.band+'</td><td>'+p.comm+'</td><td>'+langShort(p.lang)+'</td><td>'+p.ch.replace(' (community health worker)','')+'</td><td class="num"><b>'+p.pr+'</b></td><td class="num">'+(lastVisitDays(p)===null?'<span class="tiny">no visit on record</span>':lastVisitDays(p))+'</td><td>'+(p.fl.map(function(x){ return '<span class="chip '+(/Referral/.test(x)?'r':'a')+'">'+x+'</span>'; }).join('')||'<span class="tiny">none</span>')+'</td><td>'+(st?esc(st.s):'Not contacted')+'</td></tr>'; }).join('')+
     '</tbody></table></div></div><p class="tiny">'+rows.length+' of '+P.length+' simulated people. Priority points and pathway timings are placeholders until the programme\'s approved rules are loaded.</p>';
   $('app').innerHTML=h;
   if(S.focusId){ var e=$(S.focusId); if(e) e.focus(); S.focusId=null; }
@@ -1445,10 +1491,10 @@ function outreachSettings(){
 }
 function openPerson(id){
   var p=DB.people.filter(function(x){ return x.id===id; })[0], st=DB.outreach[id]||{s:'Not contacted',n:0}, dec=st.s==='Declined';
-  var lang=p.lang, kind=p.ref==='Not completed'?'f':p.kid?'c':'a', m=MSG[lang][kind].replace('{clinic}',DB.settings.siteName);
+  var lang=p.lang, kind=p.ref==='Not completed'?'f':p.recall==='Missed'?'r':p.kid?'c':'a', m=MSG[lang][kind].replace('{clinic}',DB.settings.siteName);
   var voice=/Phone|person/.test(p.ch);
   var h='<div class="row sp"><h2 style="margin:0">'+p.id+(p.kid?' (child; parent or caregiver contact)':'')+'</h2><button class="btn sm" onclick="closeDrawer()">Close</button></div>'+
-    '<p>'+p.band+', '+(p.sex==='F'?'female':'male')+', '+p.comm+'. Prefers '+langShort(lang)+' by '+p.ch.toLowerCase()+'. '+(p.kid?'Well-Child Visit oral check: '+p.wcv:'Last oral examination: '+(p.mo===null?'none on record':p.mo+' months ago'))+'.</p>'+
+    '<p>'+p.band+', '+(p.sex==='F'?'female':'male')+', '+p.comm+'. Prefers '+langShort(lang)+' by '+p.ch.toLowerCase()+'. '+(p.kid?'Well-Child Visit oral check: '+p.wcv:'Last oral examination: '+(p.mo===null?'none on record':lastVisitDays(p)+' days ago'))+'.</p>'+
     '<h3>Why this person is on the list (priority '+p.pr+')</h3><div>'+p.q.map(function(x){ return '<div class="contrib"><span>'+esc(x[0])+'</span><div class="tr"><i class="'+(x[2]==='gap'?'':'n')+'" style="width:'+(x[1]/3*100)+'%"></i></div><b style="text-align:right">+'+x[1]+'</b></div>'; }).join('')+'</div>'+
     '<p class="tiny">Teal bars: care gaps. Grey bars: risk factors. Missing answers add no points and are asked at contact.</p>'+
     '<h3>Suggested pathway</h3><ol class="path">'+personPathway(p).map(function(x){ return '<li><b>'+esc(x[0])+'</b><span class="help">'+esc(x[1])+'</span></li>'; }).join('')+'</ol>'+
@@ -1456,7 +1502,7 @@ function openPerson(id){
     '<div class="sub" lang="'+lang+'" dir="'+LANGS[lang].dir+'">'+esc(m)+'</div>'+
     (voice?'<p class="help">Introduce yourself, read the message, offer two appointment times, and ask whether they would like information in another language. Use a trained interpreter if needed.</p>':'')+
     (lang!=='en'?'<details><summary class="help">English meaning</summary><div class="sub">'+esc(MSG.en[kind].replace('{clinic}',DB.settings.siteName))+'</div></details>':'')+
-    '<p class="tiny">Preview only. Nothing is sent. Contacts this month: '+(st.n||0)+' of '+DB.settings.contactCap+'.</p>'+
+    (can('outreach')?sendPanel({ref:p.id, isCase:false, kind:kind, lang:lang, phone:st.phone||'', consent:p.ch!=='No contact', declined:dec, contacts:contactsThisMonth(st.contacts)}):'')+
     (dec?'<div class="note"><b>Decision respected.</b> No further reminders.'+(st.reason?' Reason: '+esc(st.reason):'')+'</div>':'')+
     (can('outreach')?'<label class="f" for="rsn">Reason if declined (optional)</label><input type="text" id="rsn" value="'+esc(dec?st.reason:'')+'">'+
     '<div class="row" style="margin-top:10px">'+['Invited','Booked','Attended','Deferred','Declined'].map(function(b){ var dis=(dec&&b==='Invited')||(b==='Invited'&&(st.n||0)>=DB.settings.contactCap); return '<button class="btn sm '+(st.s===b?'p':'')+'" '+(dis?'disabled':'')+' onclick="setOut(\''+p.id+'\',\''+b+'\')">'+b+'</button>'; }).join('')+'</div>':needRole('outreach'))+

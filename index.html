@@ -308,7 +308,7 @@ var canStore=(function(){ try{ localStorage.setItem('__og','1'); localStorage.re
 var DB=null;
 function freshDB(){
   return {cases:seedCases(), audit:[], outreach:{}, people:null, seq:1043,
-    settings:{threshold:0.50, reviewBand:0.15, supp:10, backend:'demo', apiUrl:'', apiKey:'', siteChecked:false, calib:null, ramadan:false, quietStart:'21:00', quietEnd:'08:00', contactCap:2, siteName:'Demo Primary Care Centre'}};
+    settings:{threshold:0.50, reviewBand:0.15, supp:10, backend:(/\.vercel\.app$/.test(location.hostname)?'api':'demo'), apiUrl:(/\.vercel\.app$/.test(location.hostname)?location.origin+'/api':''), apiKey:'', siteChecked:false, calib:null, ramadan:false, quietStart:'21:00', quietEnd:'08:00', contactCap:2, siteName:'Demo Primary Care Centre'}};
 }
 function loadDB(){
   if(canStore){ try{ var raw=localStorage.getItem(STORE_KEY); if(raw){ DB=JSON.parse(raw); if(!DB.settings||!DB.cases) DB=null; } }catch(e){ DB=null; } }
@@ -355,7 +355,7 @@ var MODEL = {
   predict:async function(d){
     if(DB.settings.backend==='api' && DB.settings.apiUrl){
       try{ return await apiPredict(d); }
-      catch(e){ var r=demoPredict(d); r.fallback='Model endpoint failed ('+(e.message||e)+'). Showing simulated output instead.'; return r; }
+      catch(e){ if(e.notOral) throw e; var r=demoPredict(d); r.fallback='Model endpoint failed ('+(e.message||e)+'). Showing simulated output instead.'; return r; }
     }
     return demoPredict(d);
   }
@@ -436,6 +436,7 @@ async function apiPredict(d){
     var res=await fetch(url,{method:'POST',body:fd,headers:headers,signal:ctl.signal}); clearTimeout(to);
     if(!res.ok) throw new Error('HTTP '+res.status);
     var j=await res.json(); MODEL._remoteVersion=j.model_version;
+    if(j.not_assessable){ var er=new Error(j.message||'Not an image that can be diagnosed. Please provide a proper image of the mouth.'); er.notOral=true; er.photo=i+1; throw er; }
     var p=CLASSES.map(function(c){ return +(j.probs&&j.probs[c])||0; });
     var s=j.suspicion!=null?+j.suspicion:p[2]+p[3];
     per.push({i:i, probs:p, probs_sd:j.probs_sd?CLASSES.map(function(c){ return +j.probs_sd[c]||0; }):null, susp:s, susp_sd:+j.suspicion_sd||0, susp_nometa:j.suspicion_uniform_meta!=null?+j.suspicion_uniform_meta:null, imgSrc:'connected model', gradcam:j.gradcam_png?'data:image/png;base64,'+j.gradcam_png:null, lesion:j.lesion_type||null, lesionConf:j.lesion_confidence, differential:j.differential||[], findings:j.findings||'', warning:j.warning||null, regions:Array.isArray(j.regions)?j.regions:null});
@@ -1163,7 +1164,15 @@ async function runModel(){
   $('app').innerHTML='<h1>Screening result</h1><div class="card" role="status"><p><b>Calculating the screening signal…</b></p><p class="help">'+(MODEL.info().simulated?'Demo simulator':'Sending '+d.imgs.length+' photo(s) and the patient history to the connected model service')+'.</p></div>';
   if(+d.age<18){ d.result={minor:true, tier:'Child', simulated:true}; }
   else {
-    var r=await MODEL.predict(d); r.tier=tierOf(r,d); r.threshold=effThreshold(); r.at=new Date().toISOString(); d.result=r;
+    var r;
+    try{ r=await MODEL.predict(d); }
+    catch(e){
+      if(!e.notOral) throw e;
+      audit('Photo not assessable',d.id+': photo '+e.photo+' does not show the mouth','Screening');
+      $('app').innerHTML='<h1>Screening result</h1><div class="warn" role="alert" style="font-size:1.05rem"><b>Photo '+e.photo+': '+esc(e.message)+'</b></div><p class="help">No screening signal was calculated. Retake or replace the photo so that the lips, tongue, gums, teeth or inside of the mouth are clearly visible.</p><button class="btn p" onclick="S.wiz.step=4;S.wiz.d.result=null;render();">Back to photos</button>';
+      return;
+    }
+    r.tier=tierOf(r,d); r.threshold=effThreshold(); r.at=new Date().toISOString(); d.result=r;
     audit('Screening signal calculated',d.id+': '+d.imgs.length+' photo(s), age, sex, smoking, alcohol, chewing'+(r.simulated?' (simulated)':' via '+r.model),'Screening; consented');
   }
   S.res={pv:d.result.top||0, heat:true, ann:true, alpha:0.5};
@@ -1318,7 +1327,7 @@ function letter(){
     '<tr><td><b>Risk factors</b></td><td>Smoking: '+d.smoke+(d.tob.length?' ('+esc(d.tob.join(', '))+')':'')+'; chewing: '+d.chew+(d.chewT.length?' ('+esc(d.chewT.join(', '))+')':'')+'; alcohol: '+d.alcohol+'; family history: '+d.famhx+'</td></tr>'+
     '<tr><td><b>Red flags</b></td><td>'+(d.flags.length?esc(d.flags.join('; ')):'None recorded')+'</td></tr>'+
     '<tr><td><b>Lesions marked</b></td><td>'+(ann.length?ann.map(esc).join('<br>'):'None outlined')+'</td></tr>'+
-    (r.minor?'':'<tr><td><b>Screening signal</b></td><td>'+TIERS[r.tier].t+', suspicion '+pct(r.susp)+'% (threshold '+pct(r.threshold)+'%)'+(r.simulated?'  ':' ['+esc(r.model)+']')+'</td></tr>')+
+    (r.minor?'':'<tr><td><b>Screening signal</b></td><td>'+TIERS[r.tier].t+', suspicion '+pct(r.susp)+'% (threshold '+pct(r.threshold)+'%)'+(r.simulated?' <b>[SIMULATED, demo]</b>':' ['+esc(r.model)+']')+'</td></tr>')+
     '<tr><td><b>Clinician action</b></td><td>'+esc((d.decision||{}).action||'not yet recorded')+((d.decision||{}).note?'<br>'+esc(d.decision.note):'')+'</td></tr></table>'+
     '<div class="row" style="margin:12px 0;line-height:0">'+d.imgs.map(function(g){ return '<img src="'+(g.thumb||g.src)+'" alt="" style="width:150px;border-radius:4px">'; }).join('')+'</div>'+
     '<p>Dear colleague, I would be grateful if you could assess this patient. The photographs and outlines are attached in the OralGuard record. The screening signal supports, but does not replace, clinical judgement.</p>'+

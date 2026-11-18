@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B7A75">
+<title>OralGuard: oral cancer screening and prevention (prototype)</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦷</text></svg>">
+<style>
+:root{
+  --bg:#F3F6F6;--surface:#fff;--ink:#142629;--mut:#56676B;--line:#D5DEDF;--line2:#E6ECEC;
+  --teal:#0B7A75;--teal-d:#075A56;--tealbg:#E3F1F0;
+  --rose:#C2415B;--rosebg:#FBEAEE;
+  --green:#1E7F4F;--greenbg:#E6F4EC;--amber:#A35C00;--amberbg:#FFF4E0;--red:#B42318;--redbg:#FDECEA;
+  --viewer:#0F1E21;
+  --r1:6px;--r2:10px;--r3:14px;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Noto Sans Bengali","Noto Naskh Arabic","Noto Nastaliq Urdu","Noto Sans Devanagari",Arial,sans-serif;color:var(--ink);background:var(--bg);font-variant-numeric:tabular-nums}
+h1,h2,h3{line-height:1.25;letter-spacing:-.01em;font-weight:680}
+h1{font-size:1.6rem;margin:.1em 0 .5em}h2{font-size:1.2rem;margin:1.1em 0 .45em}h3{font-size:1.02rem;margin:.9em 0 .35em}
+p{margin:.4em 0 .8em}
+a{color:var(--teal-d)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #1a5fd0;outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.skip{position:absolute;left:-999px;top:0;z-index:99}.skip:focus{left:8px;background:#fff;padding:8px}
+
+/* Banner + top bar */
+#banner{background:#FFF4CC;color:#5A4200;border-bottom:1px solid #E5C24A;padding:6px 12px;font-size:.88rem;font-weight:600;text-align:center}
+#top{position:sticky;top:0;z-index:30;background:var(--surface);border-bottom:1px solid var(--line);padding:8px 14px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:750;font-size:1.12rem;color:var(--teal-d)}
+.brand svg{flex:none}
+.brand small{display:block;font-weight:500;font-size:.78rem;color:var(--mut);letter-spacing:0}
+#who{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:.92rem}
+
+/* Layout */
+#layout{display:block}
+#nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);display:flex;overflow-x:auto;z-index:25;padding-bottom:env(safe-area-inset-bottom,0px)}
+#nav button{flex:1 0 auto;min-width:76px;min-height:58px;line-height:1.15;border:0;background:none;font-size:.74rem;color:var(--mut);padding:6px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+#nav button svg{width:22px;height:22px}
+#nav button.on{color:var(--teal-d);font-weight:700;box-shadow:inset 0 3px 0 var(--teal)}
+#nav .cnt{background:var(--rose);color:#fff;border-radius:999px;font-size:.68rem;padding:0 6px;font-weight:700}
+main{padding:16px 14px 100px;max-width:1080px;margin:0 auto}
+@media(min-width:880px){
+  #layout{display:flex;min-height:calc(100vh - 90px)}
+  #nav{position:sticky;top:57px;align-self:flex-start;height:calc(100vh - 57px);flex-direction:column;width:228px;border-top:0;border-right:1px solid var(--line);padding:12px 10px;overflow:auto;background:var(--surface)}
+  #nav button{flex:0 0 auto;flex-direction:row;justify-content:flex-start;gap:12px;text-align:left;font-size:.98rem;border-radius:var(--r2);min-height:46px;padding:8px 12px}
+  #nav button.on{background:var(--tealbg);box-shadow:none}
+  #nav .grp{font-size:.78rem;color:var(--mut);padding:14px 12px 4px;font-weight:600}
+  main{flex:1;padding:24px 30px 60px;margin:0;max-width:1100px}
+}
+#nav .grp{display:none}
+@media(min-width:880px){#nav .grp{display:block}}
+
+/* Surfaces */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r3);padding:16px;margin-bottom:14px}
+.card>h2:first-child,.card>h3:first-child{margin-top:0}
+.sub{background:#F8FAFA;border:1px solid var(--line2);border-radius:var(--r2);padding:12px;margin:10px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.grid2{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:880px){.grid2{grid-template-columns:1fr 1fr}.grid2.w{grid-template-columns:1.25fr 1fr}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r3);padding:14px 16px}
+.kpi b{display:block;font-size:1.85rem;line-height:1.1;color:var(--teal-d);font-weight:720}
+.kpi span{color:var(--mut);font-size:.92rem}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.sp{justify-content:space-between}
+.help{color:var(--mut);font-size:.93rem;margin:.2em 0 .6em}
+.tiny{font-size:.82rem;color:var(--mut)}
+hr{border:0;border-top:1px solid var(--line2);margin:14px 0}
+
+/* Buttons */
+.btn{min-height:46px;padding:9px 16px;border-radius:var(--r2);border:1px solid var(--teal);background:var(--surface);color:var(--teal-d);font-weight:640;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+.btn:hover{background:var(--tealbg)}
+.btn.p{background:var(--teal);color:#fff}.btn.p:hover{background:var(--teal-d)}
+.btn.q{border-color:var(--line);color:var(--ink)}
+.btn.d{border-color:var(--red);color:var(--red)}
+.btn.sm{min-height:38px;padding:5px 12px;font-size:.92rem}
+.btn.big{width:100%;min-height:58px;font-size:1.1rem}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn svg{width:20px;height:20px;flex:none}
+.lnk{background:none;border:0;color:var(--teal-d);cursor:pointer;text-decoration:underline;padding:8px 4px;min-height:40px}
+
+/* Forms */
+label.f{display:block;font-weight:620;margin:14px 0 5px}
+input[type=text],input[type=number],input[type=date],input[type=url],select,textarea{width:100%;min-height:46px;padding:9px 11px;border:1px solid #8A9A9E;border-radius:var(--r1);background:#fff}
+textarea{min-height:84px}
+input[type=checkbox],input[type=radio]{width:24px;height:24px;accent-color:var(--teal);flex:none;margin:0}
+input[type=range]{width:100%;accent-color:var(--teal);min-height:40px}
+.chk{display:flex;gap:12px;align-items:flex-start;padding:9px 0;cursor:pointer}
+.chk+.chk{border-top:1px solid var(--line2)}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1 1 0;min-width:72px;min-height:44px;border:1px solid #8A9A9E;background:#fff;border-radius:var(--r1);cursor:pointer;padding:6px 10px}
+.seg button.on{background:var(--teal);color:#fff;border-color:var(--teal);font-weight:680}
+.fgrid{display:grid;grid-template-columns:1fr;gap:0 16px}
+@media(min-width:640px){.fgrid{grid-template-columns:1fr 1fr}}
+.qrow{display:grid;grid-template-columns:1fr;gap:6px;padding:12px 0;border-bottom:1px solid var(--line2)}
+@media(min-width:700px){.qrow{grid-template-columns:1.2fr 1fr;align-items:center}}
+.qrow:last-child{border-bottom:0}
+.qrow b{display:block}
+
+/* Notes */
+.note{background:var(--amberbg);border:1px solid #E7B45E;border-radius:var(--r2);padding:10px 12px;margin:10px 0}
+.warn{background:var(--redbg);border:1px solid #E5A29B;border-radius:var(--r2);padding:10px 12px;margin:10px 0}
+.ok{background:var(--greenbg);border:1px solid #9BCDB0;border-radius:var(--r2);padding:10px 12px;margin:10px 0}
+.info{background:var(--tealbg);border:1px solid #A9D3D0;border-radius:var(--r2);padding:10px 12px;margin:10px 0}
+.disc{border-left:4px solid var(--teal);padding:8px 12px;background:var(--tealbg);margin:14px 0;font-weight:640;border-radius:0 var(--r1) var(--r1) 0}
+.note ul,.warn ul,.info ul,.ok ul{margin:.3em 0 0;padding-left:1.2em}
+
+/* Chips and status */
+.chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 10px;background:#E8EEEF;font-size:.84rem;margin:2px 2px 2px 0;white-space:nowrap}
+.chip.r{background:var(--redbg);color:var(--red)}.chip.a{background:var(--amberbg);color:var(--amber)}.chip.g{background:var(--greenbg);color:var(--green)}.chip.t{background:var(--tealbg);color:var(--teal-d)}.chip.ro{background:var(--rosebg);color:var(--rose)}
+.tier{display:flex;align-items:center;gap:14px;border-radius:var(--r3);padding:16px 18px;color:#fff}
+.tier .ic{font-size:2rem;line-height:1}
+.tier b{font-size:1.5rem;display:block;line-height:1.2}
+.tier span{font-size:.95rem;opacity:.95}
+
+/* Stepper */
+.steps{display:flex;gap:4px;margin:4px 0 16px;overflow-x:auto;padding-bottom:2px}
+.steps div{flex:1 0 auto;min-width:64px;font-size:.78rem;color:var(--mut);border-top:4px solid var(--line);padding-top:5px}
+.steps div.on{color:var(--teal-d);border-color:var(--teal);font-weight:700}
+.steps div.done{border-color:#7FBDB9;color:var(--ink)}
+.wiznav{display:flex;gap:10px;justify-content:space-between;margin-top:6px;position:sticky;bottom:70px;background:linear-gradient(transparent,var(--bg) 30%);padding:14px 0 6px;z-index:5}
+@media(min-width:880px){.wiznav{bottom:0}}
+
+/* Photo capture and viewer */
+.capgrid{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:640px){.capgrid{grid-template-columns:repeat(3,1fr)}}
+.capbtn{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:14px;border:1.5px solid var(--teal);border-radius:var(--r3);background:#fff;cursor:pointer;min-height:96px}
+.capbtn:hover{background:var(--tealbg)}
+.capbtn b{color:var(--teal-d);font-size:1.02rem}
+.capbtn span{font-size:.86rem;color:var(--mut)}
+.capbtn svg{width:28px;height:28px;color:var(--teal)}
+.drop{border:2px dashed #9DB3B5;border-radius:var(--r3);padding:16px;text-align:center;color:var(--mut);margin-top:10px}
+.drop.over{border-color:var(--teal);background:var(--tealbg)}
+.viewer{background:var(--viewer);border-radius:var(--r3);padding:10px;color:#DCE7E8}
+.viewer .stage{position:relative;display:flex;justify-content:center;align-items:center;min-height:200px}
+.viewer img,.viewer canvas{max-width:100%;max-height:62vh;display:block;border-radius:6px}
+.viewer .bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 2px 2px}
+.viewer .btn{background:transparent;color:#E8F2F2;border-color:#3D5A5E}
+.viewer .btn:hover{background:#1B3236}
+.viewer .btn.on{background:var(--rose);border-color:var(--rose);color:#fff}
+.viewer .btn.p{background:var(--teal);border-color:var(--teal)}
+.viewer select{background:#1B3236;color:#fff;border-color:#3D5A5E;min-height:38px;width:auto}
+.viewer label{color:#C9D8DA}
+.viewer .chip{color:var(--ink)}
+.bl{display:none}@media(max-width:640px){.bs{display:none}.bl{display:inline}}
+#camwrap video{width:100%;max-height:60vh;background:#000;border-radius:6px;display:block}
+#camwrap.mirror video{transform:scaleX(-1)}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.thumb{position:relative;border:3px solid transparent;border-radius:10px;padding:0;background:none;cursor:pointer}
+.thumb[aria-pressed=true]{border-color:var(--teal)}
+.thumb img{width:92px;height:72px;object-fit:cover;border-radius:7px;display:block}
+.thumb i{position:absolute;right:4px;bottom:4px;font-style:normal;font-size:.7rem;background:#000a;color:#fff;border-radius:4px;padding:0 4px}
+.qual{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.annwrap{position:relative;touch-action:none;user-select:none;-webkit-user-select:none;line-height:0}
+.annwrap canvas{touch-action:none;cursor:crosshair}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:.84rem}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.shape-list{list-style:none;padding:0;margin:8px 0}
+.shape-list li{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #2A4246}
+
+/* Result */
+.gauge{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.pbar{display:grid;grid-template-columns:86px 1fr 92px;align-items:center;gap:8px;margin:7px 0}
+.pbar .tr{position:relative;height:14px;background:#E6ECEC;border-radius:999px;overflow:hidden}
+.pbar .tr i{position:absolute;left:0;top:0;bottom:0;border-radius:999px}
+.pbar .tr s{position:absolute;top:0;bottom:0;background:#0003;text-decoration:none}
+.pbar b{text-align:right;font-size:.95rem}
+.contrib{display:grid;grid-template-columns:minmax(120px,1.2fr) 1fr 56px;align-items:center;gap:8px;margin:6px 0;font-size:.93rem}
+.contrib .tr{height:10px;background:#EEF2F2;border-radius:999px;overflow:hidden}
+.contrib .tr i{display:block;height:100%;background:var(--teal)}
+.contrib .tr i.n{background:#8A9A9E}
+.path{list-style:none;padding:0;margin:0;counter-reset:s}
+.path li{position:relative;padding:10px 0 10px 42px;border-bottom:1px solid var(--line2)}
+.path li:last-child{border-bottom:0}
+.path li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:10px;width:28px;height:28px;border-radius:50%;background:var(--tealbg);color:var(--teal-d);font-weight:700;display:flex;align-items:center;justify-content:center;font-size:.9rem}
+.path b{display:block}
+
+/* Tables */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.t{border-collapse:collapse;width:100%;background:#fff;font-size:.95rem}
+.t th,.t td{border-bottom:1px solid var(--line2);padding:9px 8px;text-align:left;white-space:nowrap;vertical-align:middle}
+.t th{font-weight:640;color:var(--mut);font-size:.86rem;background:#F8FAFA}
+.t tbody tr.cl{cursor:pointer}.t tbody tr.cl:hover{background:var(--tealbg)}
+.t td.num,.t th.num{text-align:right}
+.t tr.grp td{background:var(--tealbg);font-weight:700}
+.sup{color:var(--mut)}
+
+/* Drawer + dialog */
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:#fff;border-left:1px solid var(--line);box-shadow:-8px 0 24px #0002;overflow:auto;padding:16px 16px 90px;z-index:60}
+#scrim{position:fixed;inset:0;background:#0006;z-index:55}
+.dlg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0007;z-index:70;padding:14px}
+.dlg .card{max-width:620px;width:100%;max-height:90vh;overflow:auto;margin:0}
+#toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:var(--r2);z-index:90;font-weight:600;max-width:92vw}
+@media(min-width:880px){#toast{bottom:24px}}
+
+/* Paper (letters / cards) */
+.paper{background:#fff;padding:26px;line-height:1.6;border:1px solid var(--line);border-radius:4px;max-width:780px}
+.paper td{padding:4px 14px 4px 0;vertical-align:top}
+.pc-item{border-left:4px solid var(--teal);background:#F6FAFA;padding:8px 12px;margin:8px 0;border-radius:0 6px 6px 0}
+[dir=rtl] .pc-item{border-left:0;border-right:4px solid var(--teal);border-radius:6px 0 0 6px}
+
+/* Role picker */
+.roles{display:grid;gap:12px;grid-template-columns:1fr;max-width:820px;margin:18px auto}
+@media(min-width:700px){.roles{grid-template-columns:1fr 1fr}}
+.role{display:flex;gap:14px;align-items:flex-start;text-align:left;padding:16px;border:1px solid var(--line);border-radius:var(--r3);background:#fff;cursor:pointer}
+.role:hover{border-color:var(--teal);background:#FBFDFD}
+.role svg{width:34px;height:34px;color:var(--teal);flex:none}
+.role b{display:block;font-size:1.08rem}
+.role span{color:var(--mut);font-size:.92rem}
+.hero{max-width:820px;margin:8px auto 0}
+.hero h1{font-size:1.9rem}
+
+.svgc text{font-family:inherit}
+.bar-h{display:grid;grid-template-columns:130px 1fr 70px;gap:8px;align-items:center;margin:5px 0;font-size:.92rem}
+.bar-h .tr{height:14px;background:#EEF2F2;border-radius:4px;overflow:hidden}
+.bar-h .tr i{display:block;height:100%;background:var(--teal)}
+.bar-h .tr i.g{background:#9AA8AB}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:0 0 14px;overflow-x:auto}
+.tabs button{border:0;background:none;padding:10px 14px;min-height:44px;cursor:pointer;color:var(--mut);border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button.on{color:var(--teal-d);border-color:var(--teal);font-weight:700}
+.audit{font-size:.88rem}
+.audit td{white-space:normal}
+
+@media print{
+  #top,#nav,.noprint,#toast{display:none!important}
+  body{background:#fff}
+  main{padding:0;max-width:none}
+  .paper{border:0;padding:0}
+  #banner{display:block;border:1px solid #999}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#app">Skip to main content</a>
+<div id="banner" role="note"><span class="bs">PROTOTYPE, DEMO MODE: scores are simulated unless a trained model endpoint is connected (Governance → Model connection).</span><span class="bl">PROTOTYPE: scores are simulated</span></div>
+<header id="top">
+  <div class="brand"><svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3c-6 0-11 3.6-11 9.4 0 4 1.7 6.7 3 9.6 1.1 2.5 1.6 6 3.6 6 2.3 0 2.1-5.2 4.4-5.2s2.1 5.2 4.4 5.2c2 0 2.5-3.5 3.6-6 1.3-2.9 3-5.6 3-9.6C27 6.6 22 3 16 3z" fill="#0B7A75"/><circle cx="20.5" cy="11.5" r="3.2" fill="none" stroke="#fff" stroke-width="2"/><path d="M22.8 13.8l2.6 2.6" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><div>OralGuard<small>Oral cancer screening and prevention</small></div></div>
+  <div id="who"></div>
+</header>
+<div id="layout"><nav id="nav" aria-label="Main"></nav><main id="app" tabindex="-1"></main></div>
+<div id="dlgroot"></div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<input type="file" id="fileUp" accept="image/*" multiple hidden>
+<input type="file" id="fileCap" accept="image/*" capture="environment" hidden>
+<script>
+'use strict';
+/* =====================================================================
+   OralGuard prototype. One file, no build step, no external libraries.
+   ---------------------------------------------------------------------
+   MODEL CONNECTION
+   The app calls MODEL.predict(caseData). With backend "demo" it uses
+   demoPredict() (simulated). With backend "api" it POSTs each photo and
+   the metadata to your inference server (see the README / server.py)
+   and expects the JSON contract described above apiPredict().
+   ===================================================================== */
+
+var APP_VERSION = '1.0.0';
+var CLASSES = ['Healthy','Benign','OPMD','OCA'];
+var CLASS_COL = ['#1E7F4F','#4C8DA8','#A35C00','#B42318'];
+
+/* ---------- small utilities ---------- */
+function $(id){ return document.getElementById(id); }
+function esc(x){ return String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function pct(x,d){ return (x*100).toFixed(d||0); }
+function clamp(x,a,b){ return Math.max(a,Math.min(b,x)); }
+function uid(p){ return (p||'id')+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function today(){ return new Date(); }
+function addDays(d,n){ var x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function fmtD(d){ if(!d) return '-'; var x=new Date(d); return x.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}); }
+function fmtDT(d){ var x=new Date(d); return x.toLocaleDateString(undefined,{day:'numeric',month:'short'})+' '+x.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }
+function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
+function rng(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function gauss(R){ var u=0,v=0; while(!u) u=R(); while(!v) v=R(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+function sigmoid(z){ return 1/(1+Math.exp(-z)); }
+function logit(p){ p=clamp(p,1e-4,1-1e-4); return Math.log(p/(1-p)); }
+function toast(t){ var e=$('toast'); e.textContent=t; e.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(function(){ e.hidden=true; },2600); }
+function opts(arr,v){ return arr.map(function(o){ var val=Array.isArray(o)?o[0]:o, lab=Array.isArray(o)?o[1]:o; return '<option value="'+esc(val)+'"'+(String(val)===String(v)?' selected':'')+'>'+esc(lab)+'</option>'; }).join(''); }
+
+/* ---------- icons (inline SVG, no external files) ---------- */
+var ICONS = {
+  home:'<path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/>',
+  plus:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
+  cases:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+  out:'<path d="M4 12l15-7-4 15-3-6z"/><path d="M12 14l7-9"/>',
+  pop:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  outc:'<path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/>',
+  shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  gov:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
+  cam:'<path d="M4 8h3l2-3h6l2 3h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z"/><circle cx="12" cy="13.5" r="3.5"/>',
+  phone:'<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',
+  up:'<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/>',
+  steth:'<path d="M6 3v6a5 5 0 0010 0V3"/><path d="M11 14v2a5 5 0 0010 0v-2"/><circle cx="21" cy="12" r="1.5"/>',
+  review:'<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/><path d="M8.5 11l2 2 3.5-3.5"/>',
+  admin:'<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 21h10M7 9h4M7 13h7"/>'
+};
+function ic(n,s){ return '<svg viewBox="0 0 24 24" width="'+(s||22)+'" height="'+(s||22)+'" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(ICONS[n]||'')+'</svg>'; }
+
+/* ---------- persistence (localStorage when available, memory otherwise) ---------- */
+var STORE_KEY='oralguard.v1';
+var canStore=(function(){ try{ localStorage.setItem('__og','1'); localStorage.removeItem('__og'); return true; }catch(e){ return false; } })();
+var DB=null;
+function freshDB(){
+  return {cases:seedCases(), audit:[], outreach:{}, people:null, seq:1043,
+    settings:{threshold:0.50, reviewBand:0.15, supp:10, backend:'demo', apiUrl:'', apiKey:'', siteChecked:false, calib:null, ramadan:false, quietStart:'21:00', quietEnd:'08:00', contactCap:2, siteName:'Demo Primary Care Centre'}};
+}
+function loadDB(){
+  if(canStore){ try{ var raw=localStorage.getItem(STORE_KEY); if(raw){ DB=JSON.parse(raw); if(!DB.settings||!DB.cases) DB=null; } }catch(e){ DB=null; } }
+  if(!DB) DB=freshDB();
+}
+function saveDB(){
+  if(!canStore) return;
+  try{ localStorage.setItem(STORE_KEY,JSON.stringify(DB)); }
+  catch(e){ // most likely quota: drop full-size images from older cases, keep thumbnails
+    DB.cases.forEach(function(c,i){ if(i>3 && c.imgs) c.imgs.forEach(function(g){ if(g.src && g.thumb){ g.src=g.thumb; g.trimmed=true; } }); });
+    try{ localStorage.setItem(STORE_KEY,JSON.stringify(DB)); }catch(e2){}
+  }
+}
+function audit(action,data,purpose){
+  DB.audit.unshift({t:new Date().toISOString(), role:S.role||'-', action:action, data:data||'', purpose:purpose||''});
+  if(DB.audit.length>300) DB.audit.length=300;
+}
+
+/* ---------- roles ---------- */
+var ROLES = {
+  'Screener':{icon:'steth',d:'Clinician, registered nurse or authorized screener. Runs screenings, captures and annotates photos, records the decision.',home:'Home'},
+  'Specialist reviewer':{icon:'review',d:'Oral medicine or maxillofacial specialist. Reviews referred cases remotely and records the outcome.',home:'Cases'},
+  'Outreach coordinator':{icon:'out',d:'Finds people with unmet or overdue care and invites them in their language and channel.',home:'Outreach'},
+  'Programme admin':{icon:'admin',d:'Monitors population safeguards and outcomes, sets the site threshold and model connection.',home:'Population'}
+};
+function can(perm){
+  var r=S.role;
+  if(perm==='screen') return r==='Screener'||r==='Specialist reviewer';
+  if(perm==='review') return r==='Specialist reviewer';
+  if(perm==='outreach') return r==='Outreach coordinator'||r==='Programme admin';
+  if(perm==='admin') return r==='Programme admin';
+  return true;
+}
+function needRole(perm){
+  var who={screen:'Screener',review:'Specialist reviewer',outreach:'Outreach coordinator',admin:'Programme admin'}[perm];
+  return '<div class="note">This action needs the <b>'+who+'</b> role. <button class="lnk" onclick="setRole(\''+who+'\',true)">Switch to '+who+'</button></div>';
+}
+
+/* =====================================================================
+   MODEL ADAPTER
+   ===================================================================== */
+var MODEL = {
+  info:function(){ return DB.settings.backend==='api' && DB.settings.apiUrl ? {name:'Connected model', version:(MODEL._remoteVersion||'remote'), simulated:false} : {name:'Demo simulator', version:'demo-1.0', simulated:true}; },
+  predict:async function(d){
+    if(DB.settings.backend==='api' && DB.settings.apiUrl){
+      try{ return await apiPredict(d); }
+      catch(e){ var r=demoPredict(d); r.fallback='Model endpoint failed ('+(e.message||e)+'). Showing simulated output instead.'; return r; }
+    }
+    return demoPredict(d);
+  }
+};
+
+/* Image signal used by the simulator. It is NOT image analysis: it is set
+   from the clinician's lesion annotation, or from the presenter slider. */
+var LESION_TYPES = [
+  ['white','White patch','#E8E1C8',0.52],
+  ['red','Red patch','#E0535F',0.72],
+  ['mixed','Red-and-white (speckled)','#E88AA0',0.82],
+  ['ulcer','Ulcer or erosion','#F2A23A',0.78],
+  ['mass','Growth or mass','#C2415B',0.90],
+  ['fibro','Blanching or stiff bands','#B9A3E3',0.62],
+  ['other','Other / unsure','#7FC4E0',0.45]
+];
+function lt(k){ for(var i=0;i<LESION_TYPES.length;i++) if(LESION_TYPES[i][0]===k) return LESION_TYPES[i]; return LESION_TYPES[6]; }
+
+function imgSignal(g,d){
+  if(d.simMode==='manual') return {v:d.sim/100, src:'presenter slider ('+d.sim+'/100)'};
+  if(g.noLesion) return {v:0.10, src:'clinician marked no visible lesion'};
+  if(g.ann && g.ann.length){
+    var m=0,lab=''; g.ann.forEach(function(a){ var w=lt(a.type)[3]; if(w>m){ m=w; lab=lt(a.type)[1]; } });
+    return {v:m, src:'clinician annotation: '+lab.toLowerCase()};
+  }
+  return {v:0.30, src:'no annotation (neutral default)'};
+}
+
+function demoPredict(d){
+  var age=+d.age||0, per=[], R=rng(String(d.id||'x').split('').reduce(function(a,c){ return a+c.charCodeAt(0); },7));
+  var meta=[];
+  if(d.chew==='Yes') meta.push(['Chewing habit (betel quid, areca nut, gutka, naswar or other smokeless tobacco)',0.14]);
+  if(d.smoke==='Yes') meta.push(['Smoking (cigarettes, bidi, shisha or dokha/midwakh)',0.05]);
+  if(d.alcohol==='Yes') meta.push(['Alcohol use',0.03]);
+  if(age>=45) meta.push(['Age 45 or older',0.05]);
+  var metaSum=meta.reduce(function(a,b){ return a+b[1]; },0);
+  var imgs=d.imgs.length?d.imgs:[{_none:true}];
+  imgs.forEach(function(g,i){
+    var sig=g._none?{v:d.simMode==='manual'?d.sim/100:0.30,src:'no photo'}:imgSignal(g,d);
+    var imgC=0.08+0.62*sig.v;
+    var s=clamp(imgC+metaSum+ (R()-0.5)*0.03, 0.02, 0.97);
+    var sNoMeta=clamp(imgC+0.06,0.02,0.97); // uniform-metadata counterfactual (paper Sec. IV-E)
+    var sd=0.015+0.05*(1-Math.abs(2*s-1));
+    // split into four classes
+    var dom=null; if(g.ann&&g.ann.length){ dom=g.ann.reduce(function(a,b){ return lt(b.type)[3]>lt(a.type)[3]?b:a; }).type; }
+    var ocaShare=dom==='mass'?0.55:dom==='ulcer'?0.40:dom==='mixed'?0.30:0.14;
+    var oca=s*ocaShare*(0.6+0.4*s), opmd=s-oca;
+    var benShare=(dom&&!g.noLesion)?0.62:0.22, ben=(1-s)*benShare, hea=(1-s)-ben;
+    per.push({i:i, probs:[hea,ben,opmd,oca], susp:s, susp_sd:sd, susp_nometa:sNoMeta, imgSrc:sig.src, imgC:imgC, gradcam:null});
+  });
+  var top=per.reduce(function(a,b){ return b.susp>a.susp?b:a; });
+  var contrib=[['Image signal (photo '+(top.i+1)+', '+top.imgSrc+')',top.imgC]].concat(meta);
+  return {simulated:true, model:'demo-1.0', perImage:per, top:top.i, probs:top.probs, susp:top.susp, susp_sd:top.susp_sd, susp_nometa:top.susp_nometa, contrib:contrib, base:0.08};
+}
+
+/* ---- Real model over HTTP --------------------------------------------
+   POST {apiUrl}/predict   multipart/form-data
+     image    : JPEG file (one call per photo)
+     metadata : JSON {age, sex, smoking, alcohol, chewing}  (0/1, age in years)
+     roi      : JSON list of clinician shapes in 0..1 image coordinates (optional)
+   200 JSON:
+     { "model_version":"oralguard-effb4-epiprior-1.0",
+       "probs":{"Healthy":0.1,"Benign":0.2,"OPMD":0.5,"OCA":0.2},
+       "probs_sd":{"Healthy":0.02,...}            (optional, fold spread)
+       "suspicion":0.71, "suspicion_sd":0.04,
+       "suspicion_uniform_meta":0.52,            (optional, Sec. IV-E test)
+       "gradcam_png":"<base64 PNG, same aspect as input>" (optional) }
+   ---------------------------------------------------------------------- */
+async function apiPredict(d){
+  var url=DB.settings.apiUrl.replace(/\/+$/,'')+'/predict', per=[];
+  var meta={age:+d.age||0, sex:d.sex||'', smoking:d.smoke==='Yes'?1:0, alcohol:d.alcohol==='Yes'?1:0, chewing:d.chew==='Yes'?1:0};
+  if(!d.imgs.length) throw new Error('no photo');
+  for(var i=0;i<d.imgs.length;i++){
+    var g=d.imgs[i], blob=await (await fetch(g.src)).blob(), fd=new FormData();
+    fd.append('image',blob,'photo'+(i+1)+'.jpg'); fd.append('metadata',JSON.stringify(meta)); fd.append('roi',JSON.stringify(g.ann||[])); fd.append('history',JSON.stringify({tobacco_types:d.tob||[], chewing_types:d.chewT||[], family_history:d.famhx, previous_opmd:d.prior, inherited_risk:d.genetic, last_exam:d.lastExam, photo_site:g.site||'', red_flags:d.flags||[]}));
+    var headers={}; if(DB.settings.apiKey) headers['Authorization']='Bearer '+DB.settings.apiKey;
+    var ctl=new AbortController(), to=setTimeout(function(){ ctl.abort(); },60000);
+    var res=await fetch(url,{method:'POST',body:fd,headers:headers,signal:ctl.signal}); clearTimeout(to);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    var j=await res.json(); MODEL._remoteVersion=j.model_version;
+    var p=CLASSES.map(function(c){ return +(j.probs&&j.probs[c])||0; });
+    var s=j.suspicion!=null?+j.suspicion:p[2]+p[3];
+    per.push({i:i, probs:p, probs_sd:j.probs_sd?CLASSES.map(function(c){ return +j.probs_sd[c]||0; }):null, susp:s, susp_sd:+j.suspicion_sd||0, susp_nometa:j.suspicion_uniform_meta!=null?+j.suspicion_uniform_meta:null, imgSrc:'connected model', gradcam:j.gradcam_png?'data:image/png;base64,'+j.gradcam_png:null, lesion:j.lesion_type||null, lesionConf:j.lesion_confidence, differential:j.differential||[], findings:j.findings||'', warning:j.warning||null, regions:Array.isArray(j.regions)?j.regions:null});
+  }
+  var top=per.reduce(function(a,b){ return b.susp>a.susp?b:a; });
+  var contrib=null;
+  if(top.susp_nometa!=null) contrib=[['Image (with uninformative metadata)',top.susp_nometa],['Patient metadata (age, sex, habits)',top.susp-top.susp_nometa]];
+  return {simulated:false, model:MODEL._remoteVersion||'remote', perImage:per, top:top.i, probs:top.probs, susp:top.susp, susp_sd:top.susp_sd, susp_nometa:top.susp_nometa, contrib:contrib, base:0};
+}
+
+/* ---- Tier and pathway rules (placeholders until programme guidelines are loaded) ---- */
+function tierOf(r,d){
+  var thr=effThreshold(), flags=d.flags.length;
+  if(flags>=1 && (flags>=2 || r.probs[3]>=0.30)) return 'Urgent';
+  if(r.susp>=thr || flags) return 'Refer';
+  if(r.susp>=thr-DB.settings.reviewBand) return 'Review';
+  return 'Routine';
+}
+function effThreshold(){ return DB.settings.threshold; }
+var TIERS = {
+  Urgent:{c:'#8E1B12',bg:'var(--redbg)',ic:'‼',t:'Urgent referral suggested',s:'Red flags with a high screening signal. Suggests specialist assessment within 2 weeks.'},
+  Refer:{c:'#B42318',bg:'var(--redbg)',ic:'➜',t:'Referral suggested',s:'Screening signal at or above the site threshold, or a red flag is present.'},
+  Review:{c:'#A35C00',bg:'var(--amberbg)',ic:'◐',t:'Specialist tele-review suggested',s:'Signal close to the threshold. A specialist reviews the photos remotely before any referral.'},
+  Routine:{c:'#1E7F4F',bg:'var(--greenbg)',ic:'✓',t:'No raised screening signal',s:'Routine recall and prevention advice.'}
+};
+function pathwayFor(tier,d){
+  var p=[], now=today(), habits=(d.chew==='Yes'||d.smoke==='Yes'||d.alcohol==='Yes');
+  if(tier==='Urgent') p.push({t:'Urgent referral to oral medicine or oral and maxillofacial surgery',w:'Appointment within 14 days',due:addDays(now,14),k:'referral'});
+  if(tier==='Refer') p.push({t:'Referral to oral medicine or oral and maxillofacial surgery',w:'Appointment within 4 weeks',due:addDays(now,28),k:'referral'});
+  if(tier==='Review') p.push({t:'Remote specialist review of the photos and annotation',w:'Within 7 days',due:addDays(now,7),k:'review'},{t:'Re-examine the lesion after removing local irritants',w:'In 2 to 3 weeks; refer if it persists',due:addDays(now,21),k:'recheck'});
+  if(tier==='Routine') p.push({t:'Routine recall within the adult comprehensive screening programme',w:habits?'Re-screen in 12 months (higher-risk habits)':'Re-screen at the next comprehensive screening',due:addDays(now,habits?365:730),k:'recall'});
+  if(d.chew==='Yes'||d.smoke==='Yes') p.push({t:'Offer tobacco, betel-quid and dokha cessation support',w:'Today, brief advice plus referral to the cessation service if accepted',due:now,k:'cessation'});
+  if(d.alcohol==='Yes') p.push({t:'Brief alcohol advice',w:'Today',due:now,k:'advice'});
+  p.push({t:'Give the prevention card with monthly mouth self-check',w:'Today, in '+langShort(d.lang),due:now,k:'card'});
+  if(tier!=='Routine') p.push({t:'Track the referral until the outcome is recorded',w:'Navigator follow-up if not attended by the due date',due:p[0].due,k:'track'});
+  return p;
+}
+/* =====================================================================
+   LANGUAGES (patient-facing text are drafts for native-speaker review)
+   ===================================================================== */
+var LANGS = {en:{n:'English',dir:'ltr'},ar:{n:'العربية (Arabic)',dir:'rtl'},bn:{n:'বাংলা (Bangla)',dir:'ltr'},ur:{n:'اردو (Urdu)',dir:'rtl'},hi:{n:'हिन्दी (Hindi)',dir:'ltr'}};
+function langName(c){ return (LANGS[c]||LANGS.en).n.replace(/ \(.*\)/,'')==='English'?'English':(LANGS[c]||LANGS.en).n; }
+function langShort(c){ return {en:'English',ar:'Arabic',bn:'Bangla',ur:'Urdu',hi:'Hindi'}[c]||c; }
+
+var CARD = {
+ en:{t:'Your mouth health card',i:'Thank you for having your mouth checked. This card gives simple steps to keep your mouth healthy.',
+  sm:'Smoking|Stopping smoking is one of the best things you can do for your mouth. Ask your clinic for help to quit.',
+  be:'Betel quid, areca nut, gutka, naswar or smokeless tobacco|These can harm the mouth over time. Cutting down and then stopping helps. Ask your clinic for support.',
+  dk:'Dokha, midwakh and shisha|These are tobacco too and can harm the mouth. Stopping helps. Ask your clinic for support.',
+  al:'Alcohol|Drinking less alcohol lowers the risk to your mouth. Drinking together with tobacco raises the risk even more.',
+  ge:'Keeping your mouth healthy|Staying away from tobacco and betel quid, and drinking little or no alcohol, keeps your mouth healthier.',
+  se:'Check your mouth once a month|In good light, look at your lips, cheeks, tongue, gums, and the roof and floor of your mouth. Feel for any lump. Look for any patch that is red or white.',
+  re:'Come back to the clinic soon if you notice|a sore that does not heal in 2 to 3 weeks; bleeding for no reason; a lump; a red or white patch that stays; a loose tooth for no reason; trouble swallowing.',
+  ro:'Your next check|',f:'General advice only. Not a diagnosis.'},
+ ar:{t:'بطاقة صحة فمك',i:'شكرًا لأنك فحصت فمك. تحتوي هذه البطاقة على خطوات بسيطة للحفاظ على صحة فمك.',
+  sm:'التدخين|الإقلاع عن التدخين من أفضل ما يمكنك فعله لفمك. اطلب المساعدة من العيادة إذا أردت الإقلاع.',
+  be:'التنبول أو جوز الأريكا أو الغوتكا أو النسوار أو التبغ غير المدخَّن|قد تضر بالفم مع مرور الوقت. التقليل منها ثم تركها يفيد. اطلب الدعم من العيادة.',
+  dk:'الدوخة والمدواخ والشيشة|هذه أيضًا أنواع من التبغ وقد تضر بالفم. الإقلاع عنها يفيد. اطلب الدعم من العيادة.',
+  al:'الكحول|تقليل شرب الكحول يخفف الخطر على فمك. وشربه مع التبغ يزيد الخطر أكثر.',
+  ge:'حافظ على صحة فمك|الابتعاد عن التبغ والتنبول، وشرب القليل من الكحول أو عدم شربه، يحافظ على صحة فمك.',
+  se:'افحص فمك مرة كل شهر|في ضوء جيد، انظر إلى الشفتين والخدين واللسان واللثة وسقف الفم وأرضيته. تحسّس أي كتلة. وانتبه لأي بقعة حمراء أو بيضاء.',
+  re:'عُد إلى العيادة بسرعة إذا لاحظت|قرحة لا تلتئم خلال 2 إلى 3 أسابيع؛ نزيفًا بلا سبب؛ كتلة؛ بقعة حمراء أو بيضاء لا تزول؛ سنًا متحركة بلا سبب؛ صعوبة في البلع.',
+  ro:'فحصك القادم|',f:'نصائح عامة فقط. هذه البطاقة ليست تشخيصًا.'},
+ bn:{t:'আপনার মুখের স্বাস্থ্য কার্ড',i:'মুখ পরীক্ষা করানোর জন্য ধন্যবাদ। মুখ সুস্থ রাখতে এই কার্ডে কিছু সহজ পরামর্শ আছে।',
+  sm:'ধূমপান|ধূমপান ছেড়ে দেওয়া আপনার মুখের জন্য সবচেয়ে ভালো কাজগুলোর একটি। ছাড়তে চাইলে ক্লিনিকের কাছে সাহায্য চান।',
+  be:'পান, সুপারি, গুটখা বা ধোঁয়াবিহীন তামাক (জর্দা, গুল)|দীর্ঘদিন ব্যবহার করলে এগুলো মুখের ক্ষতি করতে পারে। কমিয়ে আনা এবং তারপর ছেড়ে দেওয়া উপকারী। ক্লিনিকের কাছে সহায়তা চান।',
+  dk:'দোখা, মিদওয়াখ ও শিশা|এগুলোও তামাক এবং মুখের ক্ষতি করতে পারে। ছেড়ে দেওয়া উপকারী। ক্লিনিকের কাছে সহায়তা চান।',
+  al:'মদ্যপান|কম মদ্যপান করলে মুখের ঝুঁকি কমে। তামাকের সঙ্গে একসাথে পান করলে ঝুঁকি আরও বেড়ে যায়।',
+  ge:'মুখ সুস্থ রাখুন|তামাক ও পান-সুপারি থেকে দূরে থাকা এবং মদ্যপান কম করা বা না করা মুখকে সুস্থ রাখে।',
+  se:'মাসে একবার নিজের মুখ দেখুন|ভালো আলোয় ঠোঁট, গাল, জিভ, মাড়ি এবং মুখের ভেতরের ওপর ও নিচের অংশ দেখুন। কোনো চাকা আছে কি না হাত দিয়ে অনুভব করুন। লাল বা সাদা দাগ আছে কি না লক্ষ করুন।',
+  re:'এগুলোর কিছু দেখলে দ্রুত ক্লিনিকে ফিরে আসুন|২-৩ সপ্তাহেও না সারা ঘা; কারণ ছাড়া রক্তপাত; চাকা বা শক্ত দলা; যে লাল বা সাদা দাগ থেকে যায়; কারণ ছাড়া দাঁত নড়া; গিলতে কষ্ট।',
+  ro:'আপনার পরবর্তী পরীক্ষা|',f:'এটি শুধু সাধারণ পরামর্শ। এটি রোগ নির্ণয় নয়।'},
+ ur:{t:'آپ کے منہ کی صحت کا کارڈ',i:'منہ کا معائنہ کروانے کا شکریہ۔ اس کارڈ میں منہ کو صحت مند رکھنے کے آسان طریقے دیے گئے ہیں۔',
+  sm:'سگریٹ نوشی|سگریٹ نوشی چھوڑنا آپ کے منہ کے لیے سب سے اچھے کاموں میں سے ایک ہے۔ چھوڑنے کے لیے کلینک سے مدد لیں۔',
+  be:'پان، چھالیہ، گٹکا، نسوار یا دھوئیں کے بغیر تمباکو|وقت کے ساتھ یہ منہ کو نقصان پہنچا سکتے ہیں۔ کم کرنا اور پھر چھوڑ دینا فائدہ مند ہے۔ کلینک سے مدد لیں۔',
+  dk:'دوخہ، مدواخ اور شیشہ|یہ بھی تمباکو ہیں اور منہ کو نقصان پہنچا سکتے ہیں۔ چھوڑنا فائدہ مند ہے۔ کلینک سے مدد لیں۔',
+  al:'شراب|کم شراب پینے سے منہ کا خطرہ کم ہوتا ہے۔ تمباکو کے ساتھ پینے سے خطرہ اور بڑھ جاتا ہے۔',
+  ge:'منہ کو صحت مند رکھیں|تمباکو اور پان سے دور رہنا، اور شراب کم پینا یا نہ پینا، منہ کو صحت مند رکھتا ہے۔',
+  se:'مہینے میں ایک بار اپنا منہ دیکھیں|اچھی روشنی میں ہونٹ، گال، زبان، مسوڑھے، اور منہ کی چھت اور نچلا حصہ دیکھیں۔ کسی گانٹھ کو ہاتھ سے محسوس کریں۔ کوئی سرخ یا سفید دھبہ دیکھیں۔',
+  re:'اگر یہ نظر آئے تو جلد کلینک آئیں|ایسا زخم جو 2 سے 3 ہفتوں میں ٹھیک نہ ہو؛ بلا وجہ خون آنا؛ گانٹھ؛ سرخ یا سفید دھبہ جو ختم نہ ہو؛ بلا وجہ دانت ہلنا؛ نگلنے میں دشواری۔',
+  ro:'آپ کا اگلا معائنہ|',f:'صرف عمومی مشورہ۔ یہ تشخیص نہیں ہے۔'},
+ hi:{t:'आपका मुँह स्वास्थ्य कार्ड',i:'मुँह की जाँच करवाने के लिए धन्यवाद। इस कार्ड में मुँह को स्वस्थ रखने के आसान उपाय दिए गए हैं।',
+  sm:'धूम्रपान|धूम्रपान छोड़ना आपके मुँह के लिए सबसे अच्छे कामों में से एक है। छोड़ने के लिए क्लिनिक से मदद लें।',
+  be:'पान, सुपारी, गुटखा, खैनी या धुआँरहित तंबाकू|समय के साथ ये मुँह को नुकसान पहुँचा सकते हैं। कम करना और फिर छोड़ देना फ़ायदेमंद है। क्लिनिक से मदद लें।',
+  dk:'दोखा, मिदवाख और शीशा (हुक्का)|ये भी तंबाकू हैं और मुँह को नुकसान पहुँचा सकते हैं। छोड़ना फ़ायदेमंद है। क्लिनिक से मदद लें।',
+  al:'शराब|कम शराब पीने से मुँह का खतरा कम होता है। तंबाकू के साथ पीने से खतरा और बढ़ जाता है।',
+  ge:'मुँह को स्वस्थ रखें|तंबाकू और पान से दूर रहना, और शराब कम पीना या न पीना, मुँह को स्वस्थ रखता है।',
+  se:'महीने में एक बार अपना मुँह देखें|अच्छी रोशनी में होंठ, गाल, जीभ, मसूड़े और मुँह की छत व नीचे का हिस्सा देखें। कोई गाँठ छूकर महसूस करें। कोई लाल या सफ़ेद धब्बा देखें।',
+  re:'ये दिखें तो जल्दी क्लिनिक आएँ|ऐसा घाव जो 2 से 3 हफ़्ते में न भरे; बिना कारण खून आना; गाँठ; लाल या सफ़ेद धब्बा जो न जाए; बिना कारण दाँत हिलना; निगलने में कठिनाई।',
+  ro:'आपकी अगली जाँच|',f:'केवल सामान्य सलाह। यह निदान नहीं है।'}
+};
+
+var MSG = {
+ en:{a:'Hello from {clinic}. We invite you for a quick mouth health check as part of your adult health screening. It takes about 10 minutes. Reply 1 to book, 2 for a call back, or STOP to opt out.',
+     c:'Hello from {clinic}. Your child is due for the mouth and teeth check in the Well-Child Visit. Reply 1 to book, 2 for a call back, or STOP to opt out.',
+     f:'Hello from {clinic}. We have not yet seen a record of your specialist mouth check. Reply 1 if you need help booking it, or STOP to opt out.'},
+ ar:{a:'مرحبًا من {clinic}. ندعوك لفحص سريع لصحة الفم ضمن الفحص الشامل للبالغين، ويستغرق نحو 10 دقائق. أرسل 1 للحجز، أو 2 لنتصل بك، أو STOP لإيقاف الرسائل.',
+     c:'مرحبًا من {clinic}. حان موعد فحص الفم والأسنان لطفلك ضمن زيارة الطفل السليم. أرسل 1 للحجز، أو 2 لنتصل بك، أو STOP لإيقاف الرسائل.',
+     f:'مرحبًا من {clinic}. لم نجد بعد ما يفيد بإجراء فحص الفم لدى الأخصائي. أرسل 1 إذا احتجت مساعدة في الحجز، أو STOP لإيقاف الرسائل.'},
+ bn:{a:'{clinic} থেকে শুভেচ্ছা। প্রাপ্তবয়স্কদের স্বাস্থ্য পরীক্ষার অংশ হিসেবে আমরা আপনাকে একটি সংক্ষিপ্ত মুখ-পরীক্ষার জন্য আমন্ত্রণ জানাচ্ছি। সময় লাগবে প্রায় ১০ মিনিট। সময় ঠিক করতে 1, ফোন পেতে 2, আর বার্তা বন্ধ করতে STOP লিখুন।',
+     c:'{clinic} থেকে শুভেচ্ছা। ওয়েল-চাইল্ড ভিজিটে আপনার সন্তানের মুখ ও দাঁত পরীক্ষার সময় হয়েছে। সময় ঠিক করতে 1, ফোন পেতে 2, আর বার্তা বন্ধ করতে STOP লিখুন।',
+     f:'{clinic} থেকে শুভেচ্ছা। বিশেষজ্ঞের কাছে আপনার মুখ-পরীক্ষার কোনো তথ্য আমরা এখনও পাইনি। সময় ঠিক করতে সাহায্য লাগলে 1 লিখুন, আর বার্তা বন্ধ করতে STOP লিখুন।'},
+ ur:{a:'{clinic} کی طرف سے سلام۔ بالغوں کی جامع اسکریننگ کے حصے کے طور پر ہم آپ کو منہ کے ایک مختصر معائنے کی دعوت دیتے ہیں۔ اس میں تقریباً 10 منٹ لگتے ہیں۔ وقت لینے کے لیے 1، کال کے لیے 2، یا پیغامات بند کرنے کے لیے STOP بھیجیں۔',
+     c:'{clinic} کی طرف سے سلام۔ ویل چائلڈ وزٹ میں آپ کے بچے کے منہ اور دانتوں کے معائنے کا وقت ہو گیا ہے۔ وقت لینے کے لیے 1، کال کے لیے 2، یا پیغامات بند کرنے کے لیے STOP بھیجیں۔',
+     f:'{clinic} کی طرف سے سلام۔ ہمیں ابھی تک ماہر کے پاس آپ کے منہ کے معائنے کا ریکارڈ نہیں ملا۔ وقت لینے میں مدد کے لیے 1، یا پیغامات بند کرنے کے لیے STOP بھیجیں۔'},
+ hi:{a:'{clinic} की ओर से नमस्ते। वयस्क स्वास्थ्य जाँच के हिस्से के रूप में हम आपको मुँह की एक छोटी जाँच के लिए आमंत्रित करते हैं। इसमें लगभग 10 मिनट लगते हैं। समय लेने के लिए 1, कॉल के लिए 2, या संदेश बंद करने के लिए STOP भेजें।',
+     c:'{clinic} की ओर से नमस्ते। वेल-चाइल्ड विज़िट में आपके बच्चे के मुँह और दाँतों की जाँच का समय हो गया है। समय लेने के लिए 1, कॉल के लिए 2, या संदेश बंद करने के लिए STOP भेजें।',
+     f:'{clinic} की ओर से नमस्ते। हमें अभी तक विशेषज्ञ के पास आपकी मुँह की जाँच का रिकॉर्ड नहीं मिला है। समय लेने में मदद के लिए 1, या संदेश बंद करने के लिए STOP भेजें।'}
+};
+
+var COMMUNITIES=['Abu Dhabi Island','Mussafah','Khalifa City','Al Ain','Al Dhafra'];
+var SITES=['Right buccal mucosa','Left buccal mucosa','Tongue, right lateral','Tongue, left lateral','Tongue, dorsum','Tongue, ventral and floor of mouth','Hard and soft palate','Upper gingiva and vestibule','Lower gingiva and vestibule','Lips and labial mucosa','Retromolar area','Other / overview'];
+var FLAGS=['Ulcer or sore not healing after 2 to 3 weeks','Unexplained bleeding','Firm or fixed lump, or induration','Red or white patch that persists','Unexplained tooth mobility','Difficulty or pain on swallowing','Numbness of lip or tongue, or neck lump'];
+
+/* ---------- seeded demonstration cases (simulated) ---------- */
+function placeholderImg(label,hue){
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240"><defs><radialGradient id="g" cx="50%" cy="52%" r="60%"><stop offset="0" stop-color="hsl('+hue+',55%,62%)"/><stop offset=".7" stop-color="hsl('+hue+',45%,38%)"/><stop offset="1" stop-color="#2a1416"/></radialGradient></defs><rect width="320" height="240" fill="url(#g)"/><ellipse cx="160" cy="132" rx="104" ry="62" fill="hsl('+(hue+8)+',60%,70%)" opacity=".55"/><text x="160" y="226" fill="#fff" font-family="sans-serif" font-size="13" text-anchor="middle">'+label+'</text></svg>';
+  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+}
+function seedCases(){
+  var R=rng(4242), out=[], now=Date.now();
+  var spec=[
+    // age,sex,lang,comm,smoke,alc,chew,tier,daysAgo,status,lesion
+    [56,'Male','bn','Mussafah','No','No','Yes','Urgent',3,'Referred','mass'],
+    [49,'Male','ur','Mussafah','Yes','No','Yes','Refer',9,'Appointment booked','mixed'],
+    [61,'Male','hi','Mussafah','No','No','Yes','Refer',41,'Referred','red'],
+    [38,'Female','ar','Al Ain','Yes','No','No','Review',2,'Awaiting specialist review','white'],
+    [44,'Male','ur','Abu Dhabi Island','No','No','Yes','Review',5,'Awaiting specialist review','white'],
+    [52,'Male','bn','Mussafah','No','No','Yes','Review',12,'Awaiting specialist review','fibro'],
+    [33,'Female','en','Khalifa City','No','Yes','No','Routine',1,'Recall scheduled',null],
+    [47,'Male','ar','Abu Dhabi Island','Yes','No','No','Routine',4,'Recall scheduled',null],
+    [58,'Male','hi','Mussafah','Yes','No','Yes','Refer',28,'Outcome recorded','white'],
+    [64,'Male','ar','Al Ain','Yes','No','No','Refer',35,'Attended','red'],
+    [29,'Female','bn','Mussafah','No','No','No','Routine',6,'Recall scheduled',null],
+    [55,'Male','ur','Al Dhafra','No','No','Yes','Review',18,'Reviewed: refer','ulcer'],
+    [41,'Male','en','Khalifa City','No','Yes','No','Routine',8,'Recall scheduled',null],
+    [50,'Female','hi','Abu Dhabi Island','No','No','Yes','Refer',16,'Referred','white'],
+    [36,'Male','bn','Mussafah','Yes','No','Yes','Review',22,'Reviewed: recall','other'],
+    [67,'Male','ar','Al Ain','Yes','No','No','Urgent',20,'Outcome recorded','mass']
+  ];
+  spec.forEach(function(s,i){
+    var created=new Date(now-s[8]*86400000), tier=s[7], lesion=s[10];
+    var base={Urgent:0.86,Refer:0.62,Review:0.43,Routine:0.18}[tier]+(R()-0.5)*0.06;
+    var oca=tier==='Urgent'?base*0.45:base*0.15, opmd=base-oca, ben=(1-base)*(lesion?0.6:0.2);
+    var hue=lesion==='mass'||lesion==='red'?350:lesion==='white'?20:8;
+    var c={id:'P-'+(1001+i), created:created.toISOString(), seeded:true, consent:{photo:true,data:true,contact:R()<0.85,research:R()<0.6},
+      age:s[0], sex:s[1], lang:s[2], community:s[3], channel:['SMS','WhatsApp','Phone call'][i%3], smoke:s[4], alcohol:s[5], chew:s[6],
+      famhx:R()<0.1?'Yes':'No', prior:'No', flags:tier==='Urgent'?[FLAGS[0],FLAGS[2]]:[],
+      imgs:[{src:placeholderImg('Simulated case: no real photo stored',hue),thumb:null,site:SITES[i%SITES.length],ann:lesion?[{type:lesion,shape:'ellipse',pts:[[0.36,0.42],[0.62,0.68]]}]:[],noLesion:!lesion,q:{ok:true}}],
+      result:{simulated:true, probs:[(1-base)-ben,ben,opmd,oca], susp:base, susp_sd:0.04, tier:tier, threshold:0.5},
+      decision:{agree:R()<0.85?'Agree':'Disagree', action:tier==='Routine'?'Routine recall':tier==='Review'?'Specialist tele-review':'Refer', note:'', by:'Screener', at:created.toISOString()},
+      status:s[9], due:addDays(created,{Urgent:14,Refer:28,Review:7,Routine:365}[tier]).toISOString()};
+    if(/Reviewed|Outcome|Attended/.test(s[9])) c.review={impression:tier==='Urgent'?'OCA':tier==='Refer'?'OPMD':'Benign',plan:/recall/.test(s[9])?'Recall in 3 months':'Biopsy',by:'Specialist reviewer',at:addDays(created,3).toISOString()};
+    if(s[9]==='Outcome recorded') c.outcome={result:tier==='Urgent'?'Oral squamous cell carcinoma (early stage)':'Leukoplakia, mild dysplasia',at:addDays(created,20).toISOString()};
+    out.push(c);
+  });
+  return out.reverse();
+}
+function caseOverdue(c){ return c.due && new Date(c.due)<today() && !/Outcome recorded|Recall scheduled|Reviewed: recall|Attended/.test(c.status); }
+
+/* ---------- simulated outreach population ---------- */
+function mkPeople(){
+  var R=rng(20271), pk=function(a){ return a[Math.floor(R()*a.length)]; }, out=[];
+  var langBy={'Abu Dhabi Island':['ar','en','hi','ur','ar'],'Mussafah':['bn','ur','hi','bn','ur','hi'],'Khalifa City':['ar','en','ar'],'Al Ain':['ar','ar','ur','en'],'Al Dhafra':['ur','ar','bn']};
+  for(var i=0;i<90;i++){
+    var comm=i<4?'Al Dhafra':pk(['Abu Dhabi Island','Mussafah','Mussafah','Khalifa City','Al Ain']);
+    var kid=R()<0.14, age=kid?3+Math.floor(R()*12):18+Math.floor(R()*62), lang=pk(langBy[comm]);
+    var sa=(lang==='bn'||lang==='ur'||lang==='hi');
+    var hab=function(y){ var x=R(); return x<0.08?'Unknown':(x<0.08+y?'Yes':'No'); };
+    var p={id:'C-'+(3001+i),kid:kid,age:age,band:kid?'Child (3-14)':age<30?'18-29':age<45?'30-44':age<60?'45-59':'60+',sex:kid?pk(['F','M']):(sa?(R()<0.8?'M':'F'):pk(['F','M'])),comm:comm,lang:lang,
+      ch:pk(['SMS','WhatsApp','Phone call','In person (community health worker)']),
+      smoke:kid?'No':hab(lang==='ar'?0.3:0.22),alcohol:kid?'No':hab(0.08),chew:kid?'No':hab(sa?0.42:0.05),famhx:R()<0.06?'Yes':'No',
+      mo:R()<0.28?null:1+Math.floor(R()*40),recall:pk(['None','None','Booked','Missed']),ref:R()<0.12?pk(['Completed','Not completed','Not completed']):'None',
+      wcv:kid?(R()<0.45?'Overdue':'Up to date'):null};
+    var q=[];
+    if(p.chew==='Yes') q.push(['Chewing habit (betel quid, areca nut or smokeless tobacco)',3,'risk']);
+    if(p.smoke==='Yes') q.push(['Smoking, shisha or dokha',1,'risk']);
+    if(p.alcohol==='Yes') q.push(['Alcohol use',1,'risk']);
+    if(p.famhx==='Yes') q.push(['Family history of head and neck cancer',1,'risk']);
+    if(!kid&&age>=45) q.push(['Age 45 or older',1,'risk']);
+    p.fl=[];
+    if(kid){ if(p.wcv==='Overdue'){ q.push(['Well-Child Visit oral-health check overdue',2,'gap']); p.fl.push('WCV overdue'); } }
+    else if(p.mo===null){ q.push(['Never had an oral examination on record',2,'gap']); p.fl.push('Never screened'); }
+    else if(p.mo>(p.chew==='Yes'||p.smoke==='Yes'?12:24)){ q.push(['Oral examination overdue ('+p.mo+' months ago)',1,'gap']); p.fl.push('Overdue'); }
+    if(p.recall==='Missed'){ q.push(['Missed recall appointment',1,'gap']); p.fl.push('Missed recall'); }
+    if(p.ref==='Not completed'){ q.push(['Earlier referral not completed',3,'gap']); p.fl.push('Referral not completed'); }
+    ['smoke','chew'].forEach(function(k){ if(p[k]==='Unknown') q.push([(k==='smoke'?'Smoking':'Chewing habit')+' status unknown (no points; ask at contact)',0,'missing']); });
+    p.q=q; p.pr=q.reduce(function(a,b){ return a+b[1]; },0);
+    out.push(p);
+  }
+  return out;
+}
+function personPathway(p){
+  if(p.kid) return [['Well-Child Visit oral-health check (examination, fluoride varnish if indicated, dental home)','Book within 4 weeks'],['Parent or caregiver advice on sugar, brushing and areca/betel exposure at home','At the visit']];
+  var a=[];
+  if(p.ref==='Not completed') a.push(['Referral navigation call: help book the specialist appointment','Within 1 week']);
+  a.push(['Adult comprehensive screening with oral examination (OralGuard photo screening)',p.pr>=6?'Within 2 weeks':p.pr>=3?'Within 1 month':'Within 3 months']);
+  if(p.chew==='Yes'||p.smoke==='Yes') a.push(['Tobacco, betel-quid and dokha cessation support','Offer at the visit']);
+  return a;
+}
+
+/* ---------- simulated population for safeguards and outcomes ---------- */
+var POP=null;
+function mkPop(){
+  var R=rng(777), out=[];
+  var sizes={'Abu Dhabi Island':420,'Mussafah':520,'Khalifa City':260,'Al Ain':300,'Al Dhafra':38};
+  var langBy={'Abu Dhabi Island':['ar','en','hi','ur','ar'],'Mussafah':['bn','ur','hi','bn','ur','hi'],'Khalifa City':['ar','en','ar'],'Al Ain':['ar','ar','ur','en'],'Al Dhafra':['ur','ar','bn']};
+  Object.keys(sizes).forEach(function(c){
+    for(var i=0;i<sizes[c];i++){
+      var lang=langBy[c][Math.floor(R()*langBy[c].length)], sa=/bn|ur|hi/.test(lang);
+      var x=R(), band=x<0.27?'18-29':x<0.58?'30-44':x<0.86?'45-59':'60+';
+      var sex=sa?(R()<0.78?'M':'F'):(R()<0.5?'M':'F');
+      var chew=sa?R()<0.40:R()<0.05, smoke=R()<0.22;
+      var risk=0.02+(chew?0.07:0)+(smoke?0.02:0)+(band==='45-59'||band==='60+'?0.03:0);
+      var truth=R()<risk; // suspicious lesion actually present (OPMD/OCA)
+      var inv=R()<(c==='Al Dhafra'?0.55:0.78);
+      var booked=inv&&R()<(lang==='en'||lang==='ar'?0.66:0.58);
+      var att=booked&&R()<(c==='Mussafah'?0.74:0.84);
+      var z=truth?1.25+gauss(R)*1.0:gauss(R)*1.0; // AUC about 0.81
+      var score=sigmoid(-1.1+1.35*z+(chew?0.5:0));
+      var flagged=att&&score>=0.5, review=att&&!flagged&&score>=0.35;
+      var refAtt=flagged&&R()<(sa?0.70:0.82), days=refAtt?Math.round(6+R()*34+(sa?6:0)):null;
+      var outcome=refAtt?truth:null; // confirmed among referrals that attended
+      var fnSeen=att&&!flagged&&truth&&R()<0.45; // missed cases later surfaced (lower bound)
+      var recallDue=att&&!flagged, recallDone=recallDue&&R()<0.6;
+      out.push({comm:c,lang:lang,band:band,sex:sex,chew:chew,inv:inv,booked:booked,att:att,truth:truth,score:score,flagged:flagged,review:review,refAtt:refAtt,days:days,outcome:outcome,fnSeen:fnSeen,recallDue:recallDue,recallDone:recallDone,cess:att&&(chew||smoke)&&R()<0.34});
+    }
+  });
+  return out;
+}
+/* =====================================================================
+   APP SHELL
+   ===================================================================== */
+var S={role:null, view:'Home', wiz:null, sub:{}, sel:null};
+var NAV=[
+  ['Care'],
+  ['Home','home'],['New screening','plus'],['Cases','cases'],
+  ['Population'],
+  ['Outreach','out'],['Population safeguards','pop'],['Outcomes','outc'],
+  ['Model'],
+  ['Trust check','shield'],['Governance','gov']
+];
+function setRole(r,keep){ S.role=r; audit('Signed in as role',r,'Demo role switch'); saveDB(); if(!keep) S.view=ROLES[r].home; render(); focusTop(); }
+function go(v){ S.view=v; S.sel=null; if(v==='New screening' && !S.wiz) newScreening(); render(); window.scrollTo(0,0); focusTop(); }
+function focusTop(){ var h=document.querySelector('#app h1'); if(h){ h.setAttribute('tabindex','-1'); try{ h.focus({preventScroll:true}); }catch(e){} } }
+
+function render(){
+  stopCam();
+  var nav=$('nav'), who=$('who'), app=$('app');
+  closeDrawer(true);
+  if(!S.role){ nav.style.display='none'; who.innerHTML=''; app.innerHTML=rolePicker(); return; }
+  nav.style.display='';
+  var awaiting=DB.cases.filter(function(c){ return /Awaiting/.test(c.status); }).length;
+  who.innerHTML='<span class="chip t">'+ic(ROLES[S.role].icon,16)+' '+esc(S.role)+'</span><button class="btn sm q" onclick="S.role=null;render()">Switch role</button><button class="btn sm q" onclick="openGuide()">Demo guide</button>';
+  nav.innerHTML=NAV.map(function(n){
+    if(n.length===1) return '<div class="grp">'+n[0]+'</div>';
+    var on=S.view===n[0]||(n[0]==='New screening'&&/Letter|Card/.test(S.view)&&S.wiz);
+    var badge=n[0]==='Cases'&&awaiting?' <span class="cnt" aria-label="'+awaiting+' awaiting review">'+awaiting+'</span>':'';
+    return '<button class="'+(on?'on':'')+'" '+(on?'aria-current="page"':'')+' onclick="go(\''+n[0]+'\')">'+ic(n[1])+'<span>'+n[0]+badge+'</span></button>';
+  }).join('');
+  var V={'Home':home,'New screening':wizard,'Cases':cases,'Outreach':outreach,'Population safeguards':population,'Outcomes':outcomes,'Trust check':trust,'Governance':governance,'Letter':letter,'Card':pcard};
+  (V[S.view]||home)();
+}
+
+function rolePicker(){
+  return '<div class="hero"><h1>Screen early. Refer on time. Close the loop.</h1>'+
+    '<p class="help" style="font-size:1.02rem">OralGuard helps clinicians and trained screeners photograph the mouth, mark lesions, get a transparent screening signal from a model validated in three South Asian cohorts, and connect each person to the right prevention or referral pathway in their own language.</p>'+
+    '<p class="help">For professionals only. Choose a role to explore the prototype (no password in this demo).</p></div>'+
+    '<div class="roles">'+Object.keys(ROLES).map(function(r){ return '<button class="role" onclick="setRole(\''+r+'\')">'+ic(ROLES[r].icon)+'<div><b>'+r+'</b><span>'+ROLES[r].d+'</span></div></button>'; }).join('')+'</div>'+
+    '<p class="tiny" style="text-align:center">'+(canStore?'Demo data are saved in this browser only.':'Storage is unavailable here, so the demo resets on reload.')+' No data leave this device unless a model endpoint is connected.</p>';
+}
+
+/* ---------- Home ---------- */
+function home(){
+  var wk=DB.cases.filter(function(c){ return daysBetween(c.created,today())<=7; });
+  var aw=DB.cases.filter(function(c){ return /Awaiting/.test(c.status); });
+  var openRef=DB.cases.filter(function(c){ return /Referred|booked|Reviewed: refer/.test(c.status); });
+  var od=DB.cases.filter(caseOverdue);
+  var h='<h1>'+(S.role==='Screener'?'Today at '+esc(DB.settings.siteName):'Home')+'</h1>'+
+    '<div class="grid">'+kpi(wk.length,'Screenings in the last 7 days')+kpi(aw.length,'Awaiting specialist review')+kpi(openRef.length,'Open referrals')+kpi(od.length,'Follow-ups overdue')+'</div>'+
+    '<div class="grid2 w" style="margin-top:14px"><div>'+
+    '<div class="card"><h2>Start a screening</h2><p class="help">Consent, risk factors, photos from the camera or device, lesion annotation, then a screening signal with a recommended pathway.</p>'+
+    '<button class="btn p big" onclick="newScreening();go(\'New screening\')">'+ic('plus')+' Start new screening</button>'+
+    '<h3>Or load a demo patient</h3><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">'+
+    preset('A','Case A','28, no habits, healthy-looking mucosa')+preset('B','Case B','47, smoker, white patch on the cheek')+
+    preset('C','Case C','56, chews betel quid, red-and-white lesion')+preset('D','Case D','Child, 9, Well-Child Visit')+'</div>'+
+    '<p class="tiny">Demo patients use synthetic drawings, not real photographs.</p></div></div><div>'+
+    '<div class="card"><h2>Needs attention</h2>'+
+    (aw.concat(od).length?'<ul class="shape-list" style="margin:0">'+uniq(aw.concat(od)).slice(0,6).map(function(c){ return '<li style="border-color:var(--line2)"><span><b>'+c.id+'</b> '+c.age+' y, '+esc(c.community||'')+'<br><span class="tiny">'+esc(c.status)+(caseOverdue(c)?', overdue since '+fmtD(c.due):'')+'</span></span><button class="btn sm" onclick="openCase(\''+c.id+'\')">Open</button></li>'; }).join('')+'</ul>':'<p class="help">Nothing waiting.</p>')+
+    '<button class="lnk" onclick="go(\'Cases\')">See all cases</button></div>'+
+    '<div class="card"><h2>How this answers Challenge 04</h2><ul class="help" style="padding-left:1.1em;margin:0">'+
+    '<li><b>Risk and care gaps:</b> <button class="lnk" onclick="go(\'Outreach\')">Outreach</button> flags never-screened, overdue and unclosed referrals with the factors behind each flag.</li>'+
+    '<li><b>Personalized pathways:</b> each result gives timing, recall and follow-up; the clinician decides.</li>'+
+    '<li><b>Culturally appropriate:</b> Arabic, English, Bangla, Urdu and Hindi; dokha, shisha, betel and naswar asked about; channel and opt-out respected.</li>'+
+    '<li><b>Local safeguards:</b> <button class="lnk" onclick="go(\'Population safeguards\')">segment rates</button> with small-cell suppression and a <button class="lnk" onclick="go(\'Trust check\')">site trust check</button>.</li>'+
+    '<li><b>Outcomes:</b> <button class="lnk" onclick="go(\'Outcomes\')">completion, timeliness and calibration</button>.</li></ul></div>'+
+    '</div></div><div class="disc">Screening aid only. Not a diagnosis. The clinician decides.</div>';
+  $('app').innerHTML=h;
+}
+function uniq(a){ var s={}; return a.filter(function(c){ if(s[c.id]) return false; s[c.id]=1; return true; }); }
+function kpi(n,l){ return '<div class="kpi"><b>'+n+'</b><span>'+l+'</span></div>'; }
+function preset(k,t,d){ return '<button class="role" style="padding:12px" onclick="loadPreset(\''+k+'\')"><div><b>'+t+'</b><span>'+d+'</span></div></button>'; }
+
+/* =====================================================================
+   SCREENING WIZARD
+   ===================================================================== */
+var STEPS=['Consent','Patient','Risk factors','Photos','Annotate','Red flags','Result'];
+function blankCase(){
+  DB.seq=(DB.seq||1043)+1;
+  return {id:'P-'+DB.seq, created:new Date().toISOString(), consent:{photo:false,data:false,contact:false,research:false,guardian:false}, consentLang:'en',
+    age:'', sex:'', lang:'en', community:'', channel:'SMS', smoke:'Unknown', alcohol:'Unknown', chew:'Unknown', tob:[], chewT:[], famhx:'Unknown', prior:'Unknown', genetic:'Unknown', lastExam:'Unknown', hie:false,
+    imgs:[], flags:[], simMode:'auto', sim:30, result:null, decision:null, status:'Draft'};
+}
+function newScreening(){ S.wiz={step:1, d:blankCase(), pv:0}; }
+function loadPreset(k){
+  newScreening(); var d=S.wiz.d;
+  var P={A:{age:28,sex:'Female',lang:'en',community:'Khalifa City',smoke:'No',alcohol:'No',chew:'No',famhx:'No',prior:'No',photo:'healthy'},
+    B:{age:47,sex:'Male',lang:'ar',community:'Al Ain',smoke:'Yes',tob:['Dokha / midwakh'],alcohol:'No',chew:'No',famhx:'No',prior:'No',photo:'white'},
+    C:{age:56,sex:'Male',lang:'bn',community:'Mussafah',smoke:'No',alcohol:'No',chew:'Yes',chewT:['Betel quid (paan)','Gutka / zarda'],famhx:'No',prior:'No',photo:'mixed'},
+    D:{age:9,sex:'Female',lang:'ur',community:'Mussafah',smoke:'No',alcohol:'No',chew:'No',famhx:'No',prior:'No',photo:'child'}}[k];
+  Object.keys(P).forEach(function(x){ if(x!=='photo') d[x]=P[x]; });
+  d.consent={photo:true,data:true,contact:true,research:false,guardian:k==='D'}; d.consentLang=d.lang; d.channel=k==='C'?'WhatsApp':'SMS';
+  makeSyntheticPhoto(P.photo,function(src){ addImageSrc(src,{synthetic:true, site:P.photo==='white'?'Left buccal mucosa':P.photo==='mixed'?'Tongue, right lateral':'Other / overview'}); });
+  audit('Loaded demo patient','Case '+k,'Demonstration');
+  S.view='New screening'; S.wiz.step=2; render(); focusTop();
+}
+function wizard(){
+  if(!can('screen')){ $('app').innerHTML='<h1>New screening</h1>'+needRole('screen'); return; }
+  if(!S.wiz) newScreening();
+  var n=S.wiz.step, d=S.wiz.d;
+  if(n===7) return resultView();
+  var h='<div class="row sp"><h1 style="margin-bottom:.2em">New screening <span class="tiny">'+d.id+'</span></h1><button class="btn sm q" onclick="if(confirm(\'Discard this screening?\')){S.wiz=null;go(\'Home\')}">Discard</button></div>'+
+    '<div class="steps" aria-label="Progress">'+STEPS.map(function(s,i){ return '<div class="'+(i+1===n?'on':i+1<n?'done':'')+'"'+(i+1===n?' aria-current="step"':'')+'>'+(i+1)+'. '+s+'</div>'; }).join('')+'</div>';
+  h+=[0,stepConsent,stepPatient,stepRisk,stepPhotos,stepAnnotate,stepFlags][n](d);
+  h+='<div class="wiznav noprint"><button class="btn q" '+(n===1?'disabled':'')+' onclick="wizBack()">Back</button><button class="btn p" id="nx" onclick="wizNext()">'+(n===6?'Get screening result':'Next')+'</button></div>';
+  $('app').innerHTML=h;
+  if(n===4) photoInit();
+  if(n===5) annInit();
+  if(S.focusId){ var e=$(S.focusId); if(e) e.focus(); S.focusId=null; }
+}
+function wizBack(){ S.wiz.step--; render(); focusTop(); }
+function wizNext(){
+  var d=S.wiz.d, n=S.wiz.step, minor=(+d.age>0 && +d.age<18);
+  if(n===1 && !(d.consent.photo && d.consent.data)){ toast('Consent for photos and data use is needed to continue.'); return; }
+  if(n===2){ var a=parseFloat(d.age); if(isNaN(a)||a<1||a>110){ toast('Enter an age between 1 and 110.'); $('age')&&$('age').focus(); return; }
+    if(a<18 && !d.consent.guardian){ toast('A parent or guardian must give consent for a child.'); S.wiz.step=1; render(); return; } }
+  if(n===4 && !d.imgs.length && !confirm('No photo added. Continue without a photo? The image part of the result will not be meaningful.')) return;
+  if(n===6){ S.wiz.step=7; runModel(); return; }
+  S.wiz.step++; render(); focusTop(); window.scrollTo(0,0);
+}
+
+var CONSENT_TXT={
+ en:'We will take photos inside your mouth and ask a few questions about your health habits. A computer tool helps the clinician decide whether you need a specialist check. Your clinician makes the decision. You can say no, and it will not change your care.',
+ ar:'سنلتقط صورًا لداخل فمك ونطرح بعض الأسئلة عن عاداتك الصحية. تساعد أداة حاسوبية الطبيب على تقرير ما إذا كنت تحتاج إلى فحص لدى أخصائي. القرار للطبيب. يمكنك الرفض، ولن يؤثر ذلك على رعايتك.',
+ bn:'আমরা আপনার মুখের ভেতরের ছবি তুলব এবং আপনার অভ্যাস নিয়ে কয়েকটি প্রশ্ন করব। একটি কম্পিউটার টুল চিকিৎসককে বুঝতে সাহায্য করবে আপনার বিশেষজ্ঞ পরীক্ষার দরকার আছে কি না। সিদ্ধান্ত নেবেন চিকিৎসক। আপনি না বলতে পারেন, তাতে আপনার চিকিৎসায় কোনো পরিবর্তন হবে না।',
+ ur:'ہم آپ کے منہ کے اندر کی تصاویر لیں گے اور آپ کی عادات کے بارے میں چند سوالات پوچھیں گے۔ ایک کمپیوٹر ٹول معالج کو یہ فیصلہ کرنے میں مدد دیتا ہے کہ آیا آپ کو ماہر کے معائنے کی ضرورت ہے۔ فیصلہ معالج کرے گا۔ آپ انکار کر سکتے ہیں، اس سے آپ کے علاج پر کوئی اثر نہیں پڑے گا۔',
+ hi:'हम आपके मुँह के अंदर की तस्वीरें लेंगे और आपकी आदतों के बारे में कुछ सवाल पूछेंगे। एक कंप्यूटर टूल डॉक्टर को यह तय करने में मदद करता है कि क्या आपको विशेषज्ञ जाँच की ज़रूरत है। फ़ैसला डॉक्टर करेंगे। आप मना कर सकते हैं, इससे आपके इलाज पर कोई असर नहीं पड़ेगा।'
+};
+function stepConsent(d){
+  var L=d.consentLang;
+  function ck(k,t,req){ return '<label class="chk"><input type="checkbox" '+(d.consent[k]?'checked':'')+' onchange="S.wiz.d.consent.'+k+'=this.checked"><span><b>'+t+'</b>'+(req?' <span class="chip r">required</span>':' <span class="chip">optional</span>')+'</span></label>'; }
+  return '<div class="card"><h2>Consent</h2><label class="f" for="cl">Read the consent statement to the person in</label><select id="cl" onchange="S.wiz.d.consentLang=this.value;S.focusId=\'cl\';render()">'+opts(Object.keys(LANGS).map(function(k){ return [k,LANGS[k].n]; }),L)+'</select>'+
+    '<div class="sub" lang="'+L+'" dir="'+LANGS[L].dir+'" style="font-size:1.05rem">'+CONSENT_TXT[L]+'</div>'+
+    ck('photo','Photographs of the mouth for this screening',1)+ck('data','Use of age, sex and habit answers to calculate the screening signal',1)+
+    ck('contact','Contact for recall and follow-up reminders (SMS, WhatsApp or phone)')+ck('research','De-identified photos and annotations may be used to check and improve the model at this site')+
+    ck('guardian','Parent or guardian consent (needed if the person is under 18)')+
+    '<p class="help" style="margin-top:10px">Optional choices can be changed later. Declining them does not affect care. Each choice is written to the data-use log.</p></div>';
+}
+function stepPatient(d){
+  return '<div class="card"><h2>Patient</h2><div class="fgrid">'+
+    '<div><label class="f">Pseudonymous ID</label><div style="min-height:46px;display:flex;align-items:center"><b>'+d.id+'</b>&nbsp;<span class="tiny">(no name or Emirates ID stored in this tool)</span></div></div>'+
+    '<div><label class="f" for="age">Age in years</label><input type="number" inputmode="numeric" id="age" min="1" max="110" value="'+esc(d.age)+'" oninput="S.wiz.d.age=this.value;ageNote()"></div>'+
+    '<div><label class="f" for="sex">Sex</label><select id="sex" onchange="S.wiz.d.sex=this.value">'+opts([['','Select'],'Female','Male'],d.sex)+'</select></div>'+
+    '<div><label class="f" for="lang">Preferred language</label><select id="lang" onchange="S.wiz.d.lang=this.value">'+opts(Object.keys(LANGS).map(function(k){ return [k,LANGS[k].n]; }),d.lang)+'</select></div>'+
+    '<div><label class="f" for="comm">Area of residence</label><select id="comm" onchange="S.wiz.d.community=this.value">'+opts([['','Select']].concat(COMMUNITIES),d.community)+'</select></div>'+
+    '<div><label class="f" for="chn">Preferred contact channel</label><select id="chn" onchange="S.wiz.d.channel=this.value">'+opts(['SMS','WhatsApp','Phone call','In person (community health worker)','No contact'],d.channel)+'</select></div>'+
+    '</div><div id="agen"></div></div>'+
+    '<div class="card"><h2>Authorized record data</h2><p class="help">With a data-sharing agreement, the tool can pre-fill screening history, family history and relevant genomic flags from the health information exchange. Every field pulled is labelled with its source and logged.</p>'+
+    (d.hie?'<div class="ok">Pulled from the health record (simulated): last oral examination <b>'+esc(d.lastExam)+'</b>; family history of head and neck cancer <b>'+esc(d.famhx)+'</b>; known genetic predisposition <b>'+esc(d.genetic)+'</b>.</div>':
+    '<button class="btn" onclick="pullHIE()">Pull from health record (simulated)</button>')+'</div>';
+}
+function ageNote(){ var a=parseFloat(S.wiz.d.age), e=$('agen'); if(!e) return;
+  e.innerHTML=(a>0&&a<18)?'<div class="note"><b>Child or adolescent.</b> The model has not been validated under 18, so no image score is produced. The tool records the photos and routes to the Well-Child Visit oral-health pathway and a dentist. Guardian consent is required.</div>':''; }
+function pullHIE(){ var d=S.wiz.d, R=rng(d.id.length*97+(+d.age||1));
+  d.hie=true; d.lastExam=R()<0.4?'Never recorded':(1+Math.floor(R()*30))+' months ago'; if(d.famhx==='Unknown') d.famhx=R()<0.1?'Yes':'No'; if(d.genetic==='Unknown') d.genetic='No';
+  audit('Pulled record fields (simulated HIE)',d.id+': last oral exam, family history, genetic predisposition flag','Screening pathway; consented'); render(); }
+
+function seg(key,choices,label){
+  var d=S.wiz.d;
+  return '<div class="seg" role="group" aria-label="'+esc(label)+'">'+choices.map(function(o){ var id='s_'+key+'_'+o.replace(/\W/g,''); return '<button id="'+id+'" class="'+(d[key]===o?'on':'')+'" aria-pressed="'+(d[key]===o)+'" onclick="S.wiz.d[\''+key+'\']=\''+o+'\';S.focusId=\''+id+'\';render()">'+o+'</button>'; }).join('')+'</div>';
+}
+function multi(key,list){
+  var d=S.wiz.d;
+  return '<div class="row" style="gap:6px;margin-top:8px">'+list.map(function(o,i){ var on=d[key].indexOf(o)>-1, id='m_'+key+i; return '<button id="'+id+'" class="btn sm '+(on?'p':'q')+'" aria-pressed="'+on+'" onclick="tog(\''+key+'\','+i+',\''+id+'\')">'+o+'</button>'; }).join('')+'</div>';
+}
+var TOB=['Cigarettes','Bidi','Shisha / waterpipe','Dokha / midwakh','E-cigarette'], CHEWT=['Betel quid (paan)','Areca nut (supari)','Gutka / zarda','Naswar','Khaini / other smokeless'];
+function tog(key,i,id){ var list=key==='tob'?TOB:CHEWT, a=S.wiz.d[key], v=list[i], p=a.indexOf(v); if(p>-1) a.splice(p,1); else a.push(v); S.focusId=id; render(); }
+function stepRisk(d){
+  var YNU=['Yes','No','Unknown'];
+  var unk=['smoke','alcohol','chew'].filter(function(k){ return d[k]==='Unknown'; }).length;
+  return '<div class="card"><h2>Risk factors</h2><p class="help"><span class="chip t">model input</span> items go into the screening model (as in the validated study). <span class="chip">pathway only</span> items shape the follow-up plan and outreach but are not used by the model.</p>'+
+    '<div class="qrow"><div><b>Tobacco smoking <span class="chip t">model input</span></b><span class="help">Current or past regular use: cigarettes, bidi, shisha, dokha or midwakh.</span></div>'+seg('smoke',YNU,'Smoking')+'</div>'+
+    (d.smoke==='Yes'?'<div class="sub">Type (optional)'+multi('tob',TOB)+'</div>':'')+
+    '<div class="qrow"><div><b>Chewing habit <span class="chip t">model input</span></b><span class="help">Betel quid, areca nut, gutka, naswar, khaini or other smokeless tobacco.</span></div>'+seg('chew',YNU,'Chewing')+'</div>'+
+    (d.chew==='Yes'?'<div class="sub">Type (optional)'+multi('chewT',CHEWT)+'</div>':'')+
+    '<div class="qrow"><div><b>Alcohol <span class="chip t">model input</span></b><span class="help">Regular alcohol use.</span></div>'+seg('alcohol',YNU,'Alcohol')+'</div>'+
+    '<div class="qrow"><div><b>Family history <span class="chip">pathway only</span></b><span class="help">Head and neck cancer in a parent, sibling or child.</span></div>'+seg('famhx',YNU,'Family history')+'</div>'+
+    '<div class="qrow"><div><b>Earlier oral lesion <span class="chip">pathway only</span></b><span class="help">Known leukoplakia, submucous fibrosis, lichen planus or treated oral cancer.</span></div>'+seg('prior',YNU,'Prior lesion')+'</div>'+
+    '<div class="qrow"><div><b>Known genetic predisposition <span class="chip">pathway only</span></b><span class="help">For example Fanconi anaemia or dyskeratosis congenita, from the authorized genomic record.</span></div>'+seg('genetic',YNU,'Genetic predisposition')+'</div>'+
+    (unk?'<div class="note">'+unk+' model input'+(unk>1?'s are':' is')+' unknown. Unknown habits are coded as absent, as in the study, which may under-estimate the signal. The result will show a reliability warning.</div>':'')+
+    '</div>';
+}
+function stepFlags(d){
+  return '<div class="card"><h2>Red flags</h2><p class="help">Clinical red flags override the model. Any tick suggests referral regardless of the score; two or more suggest urgent referral.</p>'+
+    FLAGS.map(function(f,i){ return '<label class="chk"><input type="checkbox" '+(d.flags.indexOf(f)>-1?'checked':'')+' onchange="flag('+i+',this.checked)"><span>'+f+'</span></label>'; }).join('')+'</div>'+
+    '<div class="card"><h2>Presenter control</h2><p class="help">Only in demo mode. The simulator takes its image signal from your annotation (a growth scores higher than a white patch). Switch to manual to set it directly.</p>'+
+    '<div class="seg" style="max-width:360px"><button class="'+(d.simMode==='auto'?'on':'')+'" onclick="S.wiz.d.simMode=\'auto\';render()">From annotation</button><button class="'+(d.simMode==='manual'?'on':'')+'" onclick="S.wiz.d.simMode=\'manual\';render()">Manual</button></div>'+
+    (d.simMode==='manual'?'<label class="f" for="sim">Simulated image signal: <b id="simv">'+d.sim+'</b>/100</label><input type="range" id="sim" min="0" max="100" value="'+d.sim+'" oninput="S.wiz.d.sim=+this.value;$(\'simv\').textContent=this.value">':'')+'</div>';
+}
+function flag(i,on){ var a=S.wiz.d.flags, f=FLAGS[i], p=a.indexOf(f); if(on&&p<0) a.push(f); if(!on&&p>-1) a.splice(p,1); }
+/* =====================================================================
+   PHOTOS: live camera, phone camera app, upload, drag-drop, paste
+   ===================================================================== */
+var MAX_IMGS=6, camStream=null, camFacing='environment', camDevice='';
+function inIframe(){ try{ return window.self!==window.top; }catch(e){ return true; } }
+
+function stepPhotos(d){
+  var envNote='';
+  if(!window.isSecureContext) envNote='<div class="note"><b>The live camera needs a secure address (https:// or localhost).</b> This page is opened from an insecure address, so use <b>Phone camera app</b> or <b>Upload</b>. Once hosted (Vercel, Netlify, GitHub Pages), the live camera works.</div>';
+  else if(inIframe()) envNote='<div class="note"><b>You are viewing an embedded preview.</b> Some previews block the camera. If the live camera does not start, open the hosted link in its own tab, or use <b>Phone camera app</b> / <b>Upload</b>.</div>';
+  return '<div class="card"><h2>Photos of the mouth</h2><p class="help">Add up to '+MAX_IMGS+' photos, one site per photo. Each photo is checked for light, sharpness and glare, then shown large so you can verify it before going on.</p>'+envNote+
+    '<div class="capgrid">'+
+      '<button class="capbtn" id="bLive" onclick="startCam()">'+ic('cam')+'<b>Live camera</b><span>Use this device\'s camera or a connected USB or intraoral camera, and capture in the app.</span></button>'+
+      '<button class="capbtn" onclick="$(\'fileCap\').click()">'+ic('phone')+'<b>Phone camera app</b><span>Opens the phone\'s own camera. Best image quality on most phones.</span></button>'+
+      '<button class="capbtn" onclick="$(\'fileUp\').click()">'+ic('up')+'<b>Upload from device</b><span>Choose stored JPG or PNG photos (several at once is fine).</span></button>'+
+    '</div>'+
+    '<div class="drop" id="drop">Or drag photos here, or paste an image (Ctrl/Cmd + V).</div>'+
+    '<div id="camwrap" class="viewer" style="margin-top:12px" hidden>'+
+      '<div class="stage"><video id="vid" autoplay playsinline muted></video></div>'+
+      '<div class="bar"><button class="btn p" id="bSnap" onclick="snap()">'+ic('cam',18)+' Capture</button>'+
+      '<label class="sr" for="camSel">Camera</label><select id="camSel" onchange="camDevice=this.value;startCam(this.value)"></select>'+
+      '<button class="btn" onclick="flipCam()">Switch front/back</button><button class="btn" id="bTorch" hidden onclick="torch()">Light</button><button class="btn" onclick="stopCam()">Close camera</button></div>'+
+    '</div>'+
+    '<div id="imsg" role="status" aria-live="polite" class="help" style="margin-top:8px"></div></div>'+
+    '<div class="card"><h2>Preview and verify</h2><div id="pv"></div><div class="thumbs" id="thumbs"></div></div>'+
+    '<div class="card"><h3>Photo tips</h3><ul class="help" style="padding-left:1.1em;margin:0"><li>Use good light or the phone light; avoid flash glare on wet mucosa.</li><li>Retract the cheek or tongue with a mirror or gauze so the lesion fills the frame.</li><li>One anatomical site per photo; include an overview photo if possible.</li><li>Hold still; tap the screen to focus before capturing.</li></ul></div>';
+}
+function imsg(t,warn){ var e=$('imsg'); if(e){ e.innerHTML=warn?'<div class="warn" style="margin:0">'+t+'</div>':t; } }
+function photoInit(){
+  photoUI();
+  var dz=$('drop');
+  if(dz){
+    ['dragenter','dragover'].forEach(function(ev){ dz.addEventListener(ev,function(e){ e.preventDefault(); dz.classList.add('over'); }); });
+    ['dragleave','drop'].forEach(function(ev){ dz.addEventListener(ev,function(e){ e.preventDefault(); dz.classList.remove('over'); }); });
+    dz.addEventListener('drop',function(e){ if(e.dataTransfer&&e.dataTransfer.files) addFiles(e.dataTransfer.files); });
+  }
+}
+document.addEventListener('paste',function(e){
+  if(!S.wiz||S.wiz.step!==4||S.view!=='New screening') return;
+  var items=(e.clipboardData&&e.clipboardData.items)||[], files=[];
+  for(var i=0;i<items.length;i++) if(items[i].type.indexOf('image')===0) files.push(items[i].getAsFile());
+  if(files.length){ e.preventDefault(); addFiles(files); }
+});
+$('fileUp').addEventListener('change',function(){ addFiles(this.files); this.value=''; });
+$('fileCap').addEventListener('change',function(){ addFiles(this.files); this.value=''; });
+
+function addFiles(files){
+  var list=Array.prototype.slice.call(files||[]);
+  if(!list.length) return;
+  list.forEach(function(f){
+    if(S.wiz.d.imgs.length>=MAX_IMGS){ imsg('Maximum of '+MAX_IMGS+' photos reached. Remove one to add another.',1); return; }
+    if(f.type && f.type.indexOf('image')!==0){ imsg('"'+esc(f.name)+'" is not an image.',1); return; }
+    var fr=new FileReader();
+    fr.onload=function(){ addImageSrc(fr.result,{name:f.name}); };
+    fr.onerror=function(){ imsg('Could not read "'+esc(f.name)+'".',1); };
+    fr.readAsDataURL(f);
+  });
+}
+/* Normalise every photo: data URL (no blob: URLs, which some previews block), max 1600 px, JPEG */
+function addImageSrc(src,o){
+  o=o||{};
+  var im=new Image();
+  im.onload=function(){
+    var d=S.wiz&&S.wiz.d; if(!d) return;
+    if(d.imgs.length>=MAX_IMGS){ imsg('Maximum of '+MAX_IMGS+' photos reached.',1); return; }
+    var sc=Math.min(1,1600/Math.max(im.naturalWidth,im.naturalHeight)), w=Math.round(im.naturalWidth*sc), h=Math.round(im.naturalHeight*sc);
+    var c=document.createElement('canvas'); c.width=w; c.height=h; var x=c.getContext('2d'); x.drawImage(im,0,0,w,h);
+    var out=c.toDataURL('image/jpeg',0.9);
+    var t=document.createElement('canvas'), ts=240/Math.max(w,h); t.width=Math.round(w*ts); t.height=Math.round(h*ts); t.getContext('2d').drawImage(c,0,0,t.width,t.height);
+    var g={src:out, thumb:t.toDataURL('image/jpeg',0.7), w:w, h:h, ow:im.naturalWidth, oh:im.naturalHeight, site:o.site||'', ann:[], noLesion:false, synthetic:!!o.synthetic, name:o.name||'', q:quality(c,im.naturalWidth,im.naturalHeight)};
+    d.imgs.push(g); S.wiz.pv=d.imgs.length-1;
+    audit('Photo added',d.id+' photo '+d.imgs.length+(o.synthetic?' (synthetic)':''),'Screening');
+    photoUI();
+    imsg('Photo '+d.imgs.length+' added. Check the preview below.');
+    var pv=$('pv'); if(pv && !o.synthetic) pv.scrollIntoView({behavior:'smooth',block:'nearest'});
+  };
+  im.onerror=function(){ imsg('This file could not be opened as an image. If it is an iPhone HEIC photo, choose "Most compatible" (JPEG) in camera settings or use the Phone camera app button.',1); };
+  im.src=src;
+}
+function quality(c,ow,oh){
+  var n=256, s=Math.min(1,n/Math.max(c.width,c.height)), w=Math.max(8,Math.round(c.width*s)), h=Math.max(8,Math.round(c.height*s));
+  var t=document.createElement('canvas'); t.width=w; t.height=h; var x=t.getContext('2d'); x.drawImage(c,0,0,w,h);
+  var p=x.getImageData(0,0,w,h).data, g=new Float32Array(w*h), sum=0, glare=0;
+  for(var i=0,j=0;i<p.length;i+=4,j++){ var v=0.299*p[i]+0.587*p[i+1]+0.114*p[i+2]; g[j]=v; sum+=v; if(v>248) glare++; }
+  var mean=sum/(w*h), lap=0, lm=0, cnt=0;
+  for(var yy=1;yy<h-1;yy++) for(var xx=1;xx<w-1;xx++){ var k=yy*w+xx, L=4*g[k]-g[k-1]-g[k+1]-g[k-w]-g[k+w]; lm+=L; lap+=L*L; cnt++; }
+  var varL=lap/cnt-Math.pow(lm/cnt,2), gl=glare/(w*h);
+  var msgs=[];
+  if(mean<55) msgs.push('Too dark: add light'); else if(mean>215) msgs.push('Too bright: reduce light');
+  if(varL<40) msgs.push('May be blurred: hold still and refocus');
+  if(gl>0.04) msgs.push('Glare on the mucosa: change the angle or turn off flash');
+  if(Math.min(ow,oh)<480) msgs.push('Low resolution ('+ow+'×'+oh+')');
+  return {mean:Math.round(mean), sharp:Math.round(varL), glare:+(gl*100).toFixed(1), msgs:msgs, ok:!msgs.length};
+}
+function photoUI(){
+  var d=S.wiz.d, pv=$('pv'), th=$('thumbs'); if(!pv) return;
+  var n=d.imgs.length; if(S.wiz.pv>=n) S.wiz.pv=n-1; if(S.wiz.pv<0) S.wiz.pv=0;
+  if(!n){ pv.innerHTML='<p class="help">No photo yet. Use one of the options above.</p>'; th.innerHTML=''; return; }
+  var i=S.wiz.pv, g=d.imgs[i];
+  pv.innerHTML='<div class="viewer"><div class="row sp" style="padding:2px 4px 8px"><b>Photo '+(i+1)+' of '+n+'</b>'+(g.synthetic?'<span class="chip ro">synthetic demo image</span>':'')+'</div>'+
+    '<div class="stage"><img src="'+g.src+'" alt="Preview of photo '+(i+1)+(g.site?', '+esc(g.site):'')+'"></div>'+
+    '<div class="qual">'+(g.q.ok?'<span class="chip g">✓ Light, sharpness and glare look fine</span>':g.q.msgs.map(function(m){ return '<span class="chip a">⚠ '+m+'</span>'; }).join(''))+
+    '<span class="chip">'+g.ow+'×'+g.oh+' px</span></div>'+
+    '<div class="bar"><label for="site" style="margin-right:4px">Site</label><select id="site" onchange="S.wiz.d.imgs['+i+'].site=this.value">'+opts([['','Choose anatomical site']].concat(SITES),g.site)+'</select>'+
+    '<button class="btn" onclick="rotateImg('+i+')">Rotate</button><button class="btn" onclick="rmImg('+i+')">Remove</button>'+
+    '<button class="btn p" onclick="S.wiz.pv='+i+';S.wiz.step=5;render();focusTop()">Annotate this photo</button></div>'+
+    (g.q.ok?'':'<p class="tiny" style="color:#E8C78A;padding:0 4px">Quality hints never block you. Retake if the lesion is not clearly visible.</p>')+'</div>';
+  th.innerHTML=d.imgs.map(function(x,k){ return '<button class="thumb" aria-label="Show photo '+(k+1)+'" aria-pressed="'+(k===i)+'" onclick="S.wiz.pv='+k+';photoUI()"><img src="'+(x.thumb||x.src)+'" alt=""><i>'+(k+1)+(x.ann.length?' ✎':'')+'</i></button>'; }).join('');
+}
+function rmImg(i){ if(!confirm('Remove photo '+(i+1)+'?')) return; S.wiz.d.imgs.splice(i,1); audit('Photo removed',S.wiz.d.id,'Screening'); photoUI(); }
+function rotateImg(i){
+  var g=S.wiz.d.imgs[i], im=new Image();
+  im.onload=function(){ var c=document.createElement('canvas'); c.width=im.height; c.height=im.width; var x=c.getContext('2d'); x.translate(c.width,0); x.rotate(Math.PI/2); x.drawImage(im,0,0);
+    g.src=c.toDataURL('image/jpeg',0.9); var t=document.createElement('canvas'), ts=240/Math.max(c.width,c.height); t.width=c.width*ts; t.height=c.height*ts; t.getContext('2d').drawImage(c,0,0,t.width,t.height); g.thumb=t.toDataURL('image/jpeg',0.7);
+    var w=g.w; g.w=g.h; g.h=w; w=g.ow; g.ow=g.oh; g.oh=w;
+    g.ann.forEach(function(a){ a.pts=a.pts.map(function(p){ return [1-p[1],p[0]]; }); if(a.shape!=='poly'){ var p0=a.pts[0],p1=a.pts[1]; a.pts=[[Math.min(p0[0],p1[0]),Math.min(p0[1],p1[1])],[Math.max(p0[0],p1[0]),Math.max(p0[1],p1[1])]]; } });
+    photoUI(); };
+  im.src=g.src;
+}
+
+/* ---- live camera ---- */
+function camErr(e){
+  var n=(e&&e.name)||'', m;
+  if(n==='NotAllowedError'||n==='SecurityError') m='Camera access was blocked. Allow the camera for this site (padlock icon in the address bar, then Camera: Allow) and press Live camera again.'+(inIframe()?' This embedded preview may not allow cameras at all: open the hosted link in its own tab.':'')+' You can always use <b>Phone camera app</b> or <b>Upload</b>.';
+  else if(n==='NotFoundError'||n==='DevicesNotFoundError') m='No camera was found. Connect a USB or intraoral camera, or use <b>Upload</b>.';
+  else if(n==='NotReadableError'||n==='TrackStartError') m='The camera is being used by another app (for example a video call). Close that app and try again.';
+  else m='The camera could not start ('+esc(n||e)+'). Use <b>Phone camera app</b> or <b>Upload</b> instead.';
+  imsg(m,1); $('camwrap')&&( $('camwrap').hidden=true );
+}
+async function startCam(deviceId){
+  if(S.wiz.d.imgs.length>=MAX_IMGS){ imsg('Maximum of '+MAX_IMGS+' photos reached. Remove one to add another.',1); return; }
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    imsg(window.isSecureContext?'This browser does not support a live camera. Opening the phone camera app instead.':'Live camera needs https://. Opening the phone camera app instead.',1);
+    $('fileCap').click(); return;
+  }
+  stopCam(); imsg('Starting camera… if the browser asks, choose Allow.');
+  var base={width:{ideal:1920},height:{ideal:1080}};
+  var c1={audio:false,video:Object.assign({},base,deviceId?{deviceId:{exact:deviceId}}:{facingMode:{ideal:camFacing}})};
+  var st;
+  try{ st=await navigator.mediaDevices.getUserMedia(c1); }
+  catch(e){
+    if(e&&(e.name==='OverconstrainedError'||e.name==='ConstraintNotSatisfiedError'||e.name==='NotFoundError')&&!deviceId){
+      try{ st=await navigator.mediaDevices.getUserMedia({video:true,audio:false}); }catch(e2){ return camErr(e2); }
+    } else return camErr(e);
+  }
+  var v=$('vid'); if(!v){ st.getTracks().forEach(function(t){ t.stop(); }); return; }
+  camStream=st; v.srcObject=st; $('camwrap').hidden=false;
+  try{ await v.play(); }catch(e){}
+  var tr=st.getVideoTracks()[0], set=tr.getSettings?tr.getSettings():{};
+  camDevice=set.deviceId||deviceId||'';
+  var front=set.facingMode==='user'||/front|facetime|user/i.test(tr.label||'');
+  $('camwrap').classList.toggle('mirror',!!front);
+  try{ var caps=tr.getCapabilities?tr.getCapabilities():{}; $('bTorch').hidden=!caps.torch; }catch(e){}
+  try{
+    var devs=(await navigator.mediaDevices.enumerateDevices()).filter(function(x){ return x.kind==='videoinput'; });
+    $('camSel').innerHTML=devs.map(function(x,k){ return '<option value="'+esc(x.deviceId)+'"'+(x.deviceId===camDevice?' selected':'')+'>'+esc(x.label||('Camera '+(k+1)))+'</option>'; }).join('');
+    $('camSel').hidden=devs.length<2;
+  }catch(e){}
+  imsg('Camera is on ('+esc(tr.label||'camera')+'). Frame the site, then press Capture.');
+  $('bSnap').focus(); $('camwrap').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function flipCam(){ camFacing=camFacing==='environment'?'user':'environment'; startCam(); }
+var torchOn=false;
+function torch(){ if(!camStream) return; var tr=camStream.getVideoTracks()[0]; torchOn=!torchOn; tr.applyConstraints({advanced:[{torch:torchOn}]}).catch(function(){ imsg('This camera does not allow the light to be controlled.',1); }); }
+function stopCam(){
+  if(camStream){ camStream.getTracks().forEach(function(t){ t.stop(); }); camStream=null; }
+  torchOn=false; var c=$('camwrap'); if(c) c.hidden=true; var v=$('vid'); if(v) v.srcObject=null;
+}
+function snap(){
+  var v=$('vid');
+  if(!camStream||!v||!v.videoWidth){ imsg('Camera is not ready yet. Wait a second and try again.',1); return; }
+  var c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext('2d').drawImage(v,0,0);
+  addImageSrc(c.toDataURL('image/jpeg',0.92),{name:'camera'});
+  if(S.wiz.d.imgs.length>=MAX_IMGS-1) stopCam();
+}
+
+/* ---- synthetic demo photo (drawn, not a real patient) ---- */
+function makeSyntheticPhoto(kind,cb){
+  var W=960,H=720,c=document.createElement('canvas'); c.width=W; c.height=H; var x=c.getContext('2d'), R=rng(kind.length*31);
+  var bg=x.createRadialGradient(W/2,H/2,80,W/2,H/2,620); bg.addColorStop(0,'#5a2a2c'); bg.addColorStop(1,'#120708'); x.fillStyle=bg; x.fillRect(0,0,W,H);
+  var cx=W/2, cy=H/2+10, rx=kind==='child'?300:360, ry=kind==='child'?220:260;
+  x.save(); x.beginPath(); x.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); x.clip();
+  var m=x.createRadialGradient(cx,cy,30,cx,cy,rx); m.addColorStop(0,'#d98c8f'); m.addColorStop(0.55,'#c66f76'); m.addColorStop(1,'#7d3439'); x.fillStyle=m; x.fillRect(0,0,W,H);
+  for(var i=0;i<1400;i++){ x.fillStyle='rgba('+(150+R()*80|0)+','+(70+R()*40|0)+','+(80+R()*40|0)+','+(0.05+R()*0.08)+')'; x.beginPath(); x.arc(R()*W,R()*H,1+R()*5,0,7); x.fill(); }
+  x.fillStyle='#b8585f'; x.beginPath(); x.ellipse(cx,cy+ry*0.55,rx*0.62,ry*0.42,0,Math.PI,0); x.fill();
+  var tw=kind==='child'?42:48, nT=kind==='child'?10:12;
+  for(var t=0;t<nT;t++){ var tx=cx-(nT/2)*tw+t*tw+4; x.fillStyle=kind==='healthy'?'#f3eee2':'#e8dcc0'; roundRect(x,tx,cy-ry+18+Math.abs(t-nT/2)*5,tw-6,kind==='child'?48:62,10); roundRect(x,tx,cy+ry-80-Math.abs(t-nT/2)*5,tw-6,kind==='child'?44:58,10); }
+  function blob(px,py,r,col,ir){ x.fillStyle=col; x.beginPath(); for(var a=0;a<=24;a++){ var th=a/24*Math.PI*2, rr=r*(1+(R()-0.5)*ir); x.lineTo(px+Math.cos(th)*rr*1.3,py+Math.sin(th)*rr); } x.closePath(); x.fill(); }
+  if(kind==='white'){ x.globalAlpha=0.85; blob(cx-170,cy+10,62,'#efe7d6',0.45); x.globalAlpha=0.5; blob(cx-150,cy+20,40,'#fffaf0',0.5); x.globalAlpha=1; }
+  if(kind==='mixed'){ blob(cx+150,cy+30,72,'#b0222e',0.5); x.globalAlpha=0.9; for(var k=0;k<26;k++){ x.fillStyle='#f1e8d8'; x.beginPath(); x.arc(cx+150+(R()-0.5)*150,cy+30+(R()-0.5)*90,4+R()*9,0,7); x.fill(); } x.globalAlpha=1; blob(cx+160,cy+40,22,'#f2b24c',0.6); }
+  x.restore();
+  x.fillStyle='rgba(255,255,255,.85)'; x.font='600 22px system-ui,sans-serif'; x.fillText('SYNTHETIC DEMO IMAGE, NOT A PATIENT',24,H-24);
+  cb(c.toDataURL('image/jpeg',0.9));
+}
+function roundRect(x,a,b,w,h,r){ x.beginPath(); x.moveTo(a+r,b); x.arcTo(a+w,b,a+w,b+h,r); x.arcTo(a+w,b+h,a,b+h,r); x.arcTo(a,b+h,a,b,r); x.arcTo(a,b,a+w,b,r); x.closePath(); x.fill(); }
+
+/* =====================================================================
+   ANNOTATION
+   ===================================================================== */
+var AN={tool:'poly', type:'white', sel:-1, drawing:null, img:null, cv:null};
+function stepAnnotate(d){
+  if(!d.imgs.length) return '<div class="card"><h2>Annotate lesions</h2><p class="help">No photo to annotate. Go back to add one, or continue without.</p></div>';
+  var i=S.wiz.pv||0, g=d.imgs[i];
+  var tools=[['poly','Outline'],['ellipse','Ellipse'],['rect','Box'],['select','Select']];
+  return '<div class="card"><h2>Annotate lesions</h2><p class="help">Outline each visible lesion and choose what it looks like. Annotations go into the referral, steer the attention overlay, and with consent become lesion masks for checking the model at this site, the same kind of mask the model learned from.</p>'+
+    '<div class="viewer"><div class="bar" style="padding-top:0">'+
+      tools.map(function(t){ return '<button class="btn sm '+(AN.tool===t[0]?'on':'')+'" aria-pressed="'+(AN.tool===t[0])+'" onclick="AN.tool=\''+t[0]+'\';AN.sel=-1;annTools()">'+t[1]+'</button>'; }).join('')+
+      '<label class="sr" for="ltype">Lesion type</label><select id="ltype" onchange="AN.type=this.value;if(AN.sel>-1){curImg().ann[AN.sel].type=this.value;annDraw();annList();}">'+opts(LESION_TYPES.map(function(t){ return [t[0],t[1]]; }),AN.type)+'</select>'+
+      '<button class="btn sm" onclick="annUndo()">Undo</button><button class="btn sm" onclick="annDel()" id="bDel" '+(AN.sel<0?'disabled':'')+'>Delete selected</button>'+
+    '</div><div class="stage"><div class="annwrap" id="annwrap"><canvas id="anncv" aria-label="Annotation canvas for photo '+(i+1)+'. Use the shape list below for a text summary."></canvas></div></div>'+
+    '<div class="bar"><label class="chk" style="padding:4px 0;color:#DCE7E8"><input type="checkbox" id="nolz" '+(g.noLesion?'checked':'')+' onchange="curImg().noLesion=this.checked;if(this.checked){curImg().ann=[];AN.sel=-1;}annDraw();annList()"> No visible lesion on this photo</label></div>'+
+    '<ul class="shape-list" id="annlist"></ul>'+
+    '<div class="legend" style="padding:4px 2px">'+LESION_TYPES.map(function(t){ return '<span><i style="background:'+t[2]+'"></i>'+t[1]+'</span>'; }).join('')+'</div></div>'+
+    (d.imgs.length>1?'<div class="thumbs">'+d.imgs.map(function(x,k){ return '<button class="thumb" aria-label="Annotate photo '+(k+1)+'" aria-pressed="'+(k===i)+'" onclick="S.wiz.pv='+k+';AN.sel=-1;render()"><img src="'+(x.thumb||x.src)+'" alt=""><i>'+(k+1)+(x.ann.length?' ✎'+x.ann.length:x.noLesion?' ✓':'')+'</i></button>'; }).join('')+'</div>':'')+
+    '<div class="row" style="margin-top:10px"><button class="btn sm" onclick="exportMask()">Download lesion mask (PNG)</button><button class="btn sm" onclick="exportAnn()">Download annotations (JSON)</button></div>'+
+    '<p class="tiny">Outline: press and drag around the lesion, release to close. Ellipse and Box: drag across the lesion. Select: tap a shape to change its type or delete it. Works with mouse, touch and stylus.</p></div>';
+}
+function curImg(){ return S.wiz.d.imgs[S.wiz.pv||0]; }
+function annTools(){ render(); }
+function annInit(){
+  var g=curImg(); if(!g) return;
+  var cv=$('anncv'); AN.cv=cv; AN.img=new Image();
+  AN.img.onload=function(){ var sc=Math.min(1,1400/Math.max(AN.img.naturalWidth,AN.img.naturalHeight)); cv.width=Math.round(AN.img.naturalWidth*sc); cv.height=Math.round(AN.img.naturalHeight*sc); annDraw(); };
+  AN.img.src=g.src; annList();
+  cv.addEventListener('pointerdown',annDown); cv.addEventListener('pointermove',annMove); cv.addEventListener('pointerup',annUp); cv.addEventListener('pointercancel',annUp);
+}
+function npos(e){ var r=AN.cv.getBoundingClientRect(); return [clamp((e.clientX-r.left)/r.width,0,1),clamp((e.clientY-r.top)/r.height,0,1)]; }
+function annDown(e){
+  e.preventDefault(); var p=npos(e), g=curImg();
+  if(AN.tool==='select'){ AN.sel=hitShape(g.ann,p); if(AN.sel>-1){ AN.type=g.ann[AN.sel].type; $('ltype').value=AN.type; } $('bDel').disabled=AN.sel<0; annDraw(); annList(); return; }
+  try{ AN.cv.setPointerCapture(e.pointerId); }catch(er){}
+  AN.drawing={shape:AN.tool,type:AN.type,pts:AN.tool==='poly'?[p]:[p,p]};
+}
+function annMove(e){
+  if(!AN.drawing) return; e.preventDefault(); var p=npos(e), d=AN.drawing;
+  if(d.shape==='poly'){ var l=d.pts[d.pts.length-1]; if(Math.hypot(p[0]-l[0],p[1]-l[1])>0.004) d.pts.push(p); } else d.pts[1]=p;
+  annDraw();
+}
+function annUp(){
+  var d=AN.drawing; if(!d) return; AN.drawing=null; var g=curImg();
+  if(d.shape==='poly'){ if(d.pts.length<4){ annDraw(); return; } }
+  else { var a=d.pts[0],b=d.pts[1]; if(Math.abs(a[0]-b[0])<0.01||Math.abs(a[1]-b[1])<0.01){ annDraw(); return; } d.pts=[[Math.min(a[0],b[0]),Math.min(a[1],b[1])],[Math.max(a[0],b[0]),Math.max(a[1],b[1])]]; }
+  g.ann.push(d); g.noLesion=false; var nl=$('nolz'); if(nl) nl.checked=false;
+  audit('Lesion annotated',S.wiz.d.id+' photo '+((S.wiz.pv||0)+1)+': '+lt(d.type)[1],'Screening; mask for local model check if consented');
+  annDraw(); annList(); thumbRefresh();
+}
+function thumbRefresh(){ /* keep counts on thumbnails current without re-rendering canvas */ var b=document.querySelectorAll('.thumb i'); var d=S.wiz.d; b.forEach(function(el,k){ var x=d.imgs[k]; if(x) el.textContent=(k+1)+(x.ann.length?' ✎'+x.ann.length:x.noLesion?' ✓':''); }); }
+function annUndo(){ var g=curImg(); if(g.ann.length){ g.ann.pop(); AN.sel=-1; annDraw(); annList(); thumbRefresh(); } }
+function annDel(){ var g=curImg(); if(AN.sel>-1){ g.ann.splice(AN.sel,1); AN.sel=-1; $('bDel').disabled=true; annDraw(); annList(); thumbRefresh(); } }
+function annDraw(){ if(!AN.cv||!AN.img||!AN.img.complete) return; var g=curImg(); drawOverlay(AN.cv.getContext('2d'),AN.cv.width,AN.cv.height,AN.img,g.ann.concat(AN.drawing?[AN.drawing]:[]),{sel:AN.sel,fill:0.22}); }
+function annList(){
+  var el=$('annlist'), g=curImg(); if(!el) return;
+  if(g.noLesion){ el.innerHTML='<li>Marked as no visible lesion.</li>'; return; }
+  el.innerHTML=g.ann.length?g.ann.map(function(a,k){ return '<li><span><i style="display:inline-block;width:12px;height:12px;border-radius:3px;background:'+lt(a.type)[2]+';margin-right:6px"></i>Lesion '+(k+1)+': '+lt(a.type)[1]+' <span class="tiny" style="color:#9fb4b6">about '+(shapeArea(a)*100).toFixed(1)+'% of the photo</span></span><button class="btn sm" onclick="AN.sel='+k+';AN.tool=\'select\';AN.type=curImg().ann['+k+'].type;render()">Select</button></li>'; }).join(''):'<li>No lesion outlined yet.</li>';
+}
+function shapeArea(a){
+  if(a.shape==='rect') return (a.pts[1][0]-a.pts[0][0])*(a.pts[1][1]-a.pts[0][1]);
+  if(a.shape==='ellipse') return Math.PI/4*(a.pts[1][0]-a.pts[0][0])*(a.pts[1][1]-a.pts[0][1]);
+  var s=0; for(var i=0;i<a.pts.length;i++){ var p=a.pts[i],q=a.pts[(i+1)%a.pts.length]; s+=p[0]*q[1]-q[0]*p[1]; } return Math.abs(s/2);
+}
+function hitShape(list,p){
+  for(var k=list.length-1;k>=0;k--){ var a=list[k];
+    if(a.shape==='rect'){ if(p[0]>=a.pts[0][0]&&p[0]<=a.pts[1][0]&&p[1]>=a.pts[0][1]&&p[1]<=a.pts[1][1]) return k; }
+    else if(a.shape==='ellipse'){ var cx=(a.pts[0][0]+a.pts[1][0])/2, cy=(a.pts[0][1]+a.pts[1][1])/2, rx=(a.pts[1][0]-a.pts[0][0])/2, ry=(a.pts[1][1]-a.pts[0][1])/2; if(Math.pow((p[0]-cx)/rx,2)+Math.pow((p[1]-cy)/ry,2)<=1) return k; }
+    else { var ins=false; for(var i=0,j=a.pts.length-1;i<a.pts.length;j=i++){ var xi=a.pts[i][0],yi=a.pts[i][1],xj=a.pts[j][0],yj=a.pts[j][1]; if(((yi>p[1])!==(yj>p[1]))&&(p[0]<(xj-xi)*(p[1]-yi)/(yj-yi)+xi)) ins=!ins; } if(ins) return k; }
+  }
+  return -1;
+}
+function pathShape(x,a,W,H){
+  x.beginPath();
+  if(a.shape==='rect') x.rect(a.pts[0][0]*W,a.pts[0][1]*H,(a.pts[1][0]-a.pts[0][0])*W,(a.pts[1][1]-a.pts[0][1])*H);
+  else if(a.shape==='ellipse') x.ellipse((a.pts[0][0]+a.pts[1][0])/2*W,(a.pts[0][1]+a.pts[1][1])/2*H,Math.abs(a.pts[1][0]-a.pts[0][0])/2*W,Math.abs(a.pts[1][1]-a.pts[0][1])/2*H,0,0,Math.PI*2);
+  else { a.pts.forEach(function(p,i){ if(i) x.lineTo(p[0]*W,p[1]*H); else x.moveTo(p[0]*W,p[1]*H); }); x.closePath(); }
+}
+/* draw image + optional heatmap + annotations */
+function drawOverlay(x,W,H,img,shapes,o){
+  o=o||{}; x.clearRect(0,0,W,H); x.drawImage(img,0,0,W,H);
+  if(o.heat){ x.save(); x.globalAlpha=o.heatAlpha==null?0.5:o.heatAlpha; x.drawImage(o.heat,0,0,W,H); x.restore(); }
+  if(o.showAnn===false) return;
+  var lw=Math.max(2,Math.round(W/320));
+  shapes.forEach(function(a,k){
+    var col=lt(a.type)[2]; pathShape(x,a,W,H);
+    x.save(); x.globalAlpha=o.fill==null?0.2:o.fill; x.fillStyle=col; x.fill(); x.restore();
+    x.lineWidth=(k===o.sel?lw*2.2:lw)+2; x.strokeStyle='rgba(0,0,0,.55)'; x.stroke(); x.lineWidth=k===o.sel?lw*2.2:lw; x.strokeStyle=k===o.sel?'#fff':col; x.setLineDash(k===o.sel?[lw*3,lw*2]:[]); x.stroke(); x.setLineDash([]);
+    var b=shapeBox(a); x.font='600 '+Math.max(13,Math.round(W/55))+'px system-ui,sans-serif'; x.fillStyle='#000a'; var lab=String(k+1); x.fillRect(b[0]*W,b[1]*H-Math.max(18,W/40),Math.max(20,W/40),Math.max(18,W/40)); x.fillStyle='#fff'; x.fillText(lab,b[0]*W+4,b[1]*H-5);
+  });
+}
+function shapeBox(a){ var xs=a.pts.map(function(p){ return p[0]; }), ys=a.pts.map(function(p){ return p[1]; }); return [Math.min.apply(0,xs),Math.min.apply(0,ys),Math.max.apply(0,xs),Math.max.apply(0,ys)]; }
+function download(name,url){ var a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); }
+function exportMask(){
+  var g=curImg(); if(!g.ann.length){ toast('Outline a lesion first.'); return; }
+  var c=document.createElement('canvas'); c.width=g.w; c.height=g.h; var x=c.getContext('2d'); x.fillStyle='#000'; x.fillRect(0,0,c.width,c.height); x.fillStyle='#fff';
+  g.ann.forEach(function(a){ pathShape(x,a,c.width,c.height); x.fill(); });
+  download(S.wiz.d.id+'_photo'+((S.wiz.pv||0)+1)+'_mask.png',c.toDataURL('image/png')); audit('Mask exported',S.wiz.d.id,'Local model check'); toast('Mask downloaded');
+}
+function exportAnn(){
+  var d=S.wiz.d, j={case:d.id, created:d.created, photos:d.imgs.map(function(g,i){ return {index:i+1,site:g.site,width:g.w,height:g.h,no_visible_lesion:g.noLesion,lesions:g.ann.map(function(a){ return {type:a.type,label:lt(a.type)[1],shape:a.shape,points_normalized:a.pts}; })}; })};
+  download(d.id+'_annotations.json','data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(j,null,2))); toast('Annotations downloaded');
+}
+/* =====================================================================
+   RESULT
+   ===================================================================== */
+async function runModel(){
+  var d=S.wiz.d;
+  $('app').innerHTML='<h1>Screening result</h1><div class="card" role="status"><p><b>Calculating the screening signal…</b></p><p class="help">'+(MODEL.info().simulated?'Demo simulator':'Sending '+d.imgs.length+' photo(s) and the patient history to the connected model service')+'.</p></div>';
+  if(+d.age<18){ d.result={minor:true, tier:'Child', simulated:true}; }
+  else {
+    var r=await MODEL.predict(d); r.tier=tierOf(r,d); r.threshold=effThreshold(); r.at=new Date().toISOString(); d.result=r;
+    audit('Screening signal calculated',d.id+': '+d.imgs.length+' photo(s), age, sex, smoking, alcohol, chewing'+(r.simulated?' (simulated)':' via '+r.model),'Screening; consented');
+  }
+  S.res={pv:d.result.top||0, heat:true, ann:true, alpha:0.5};
+  saveDB(); render(); focusTop();
+}
+function resultView(){
+  var d=S.wiz.d, r=d.result;
+  if(!r){ runModel(); return; }
+  if(r.minor) return childResult(d);
+  var T=TIERS[r.tier], s=r.susp, info=MODEL.info();
+  var unk=['smoke','alcohol','chew'].filter(function(k){ return d[k]==='Unknown'; });
+  var rel=[];
+  if(r.fallback) rel.push(r.fallback);
+  if(r.simulated) rel.push('Demo mode: the four-class percentages and the signal are simulated, not produced by the trained model.');
+  if(!DB.settings.siteChecked) rel.push('The site trust check has not been run. The threshold of '+effThreshold().toFixed(2)+' was set on the Sri Lankan development cohort and did not transfer to a low-prevalence Indian cohort in validation.');
+  if(unk.length) rel.push(unk.length+' habit answer(s) unknown and coded as absent; the signal may be under-estimated.');
+  if(!d.imgs.length) rel.push('No photo: the image part of the signal is not meaningful.');
+  d.imgs.forEach(function(g,i){ if(g.q&&!g.q.ok) rel.push('Photo '+(i+1)+': '+g.q.msgs.join('; ')+'.'); if(!g.ann.length&&!g.noLesion) rel.push('Photo '+(i+1)+' has no annotation.'); });
+  if(r.probs[3]>0.2) rel.push('The cancer class is weakly separated by the validated model (cancer F1 44% internally; 46% of cancers were labelled OPMD). Treat the OCA percentage as indicative only; the screening signal is the primary output.');
+  if(s>effThreshold()-0.08 && s<effThreshold()+0.08) rel.push('The signal is close to the threshold. Small changes in the photo could move the tier.');
+  var nometa=r.susp_nometa!=null?'<div class="info">If the habit data were replaced with an uninformative vector, this signal would be <b>'+pct(r.susp_nometa)+'%</b> instead of <b>'+pct(s)+'%</b>. In validation, removing metadata lowered AUC by 0.233 internally and 0.157 in Bangladesh, and changed nothing in a low-prevalence Indian cohort. Check this site before relying on habit data.</div>':'';
+  var pathway=pathwayFor(r.tier,d);
+  var h='<div class="row sp noprint"><h1 style="margin-bottom:.2em">Screening result <span class="tiny">'+d.id+'</span></h1><span class="chip '+(info.simulated?'a':'g')+'">'+(info.simulated?'⚠ Simulated output':'✓ '+esc(r.model))+'</span></div>'+
+    '<div class="steps">'+STEPS.map(function(x,i){ return '<div class="'+(i===6?'on':'done')+'">'+(i+1)+'. '+x+'</div>'; }).join('')+'</div>'+
+    '<div class="grid2 w"><div>'+
+      '<div class="tier" style="background:'+T.c+'"><span class="ic" aria-hidden="true">'+T.ic+'</span><div><b>'+T.t+'</b><span>'+T.s+'</span></div></div>'+
+      '<div class="card" style="margin-top:12px"><div class="gauge">'+gauge(s,r.susp_sd,effThreshold(),T.c)+
+        '<div><b style="font-size:1.05rem">Suspicion signal '+pct(s)+'%</b><div class="help" style="margin:0">'+(r.susp_sd?'Fold spread ±'+pct(r.susp_sd,1)+' points. ':'')+'Site threshold '+pct(effThreshold())+'%, review band from '+pct(effThreshold()-DB.settings.reviewBand)+'%.</div>'+
+        (d.flags.length?'<div class="chip r" style="margin-top:6px">'+d.flags.length+' red flag'+(d.flags.length>1?'s':'')+' override the score</div>':'')+'</div></div>'+
+        (function(){ var q=r.perImage&&r.perImage[r.top]; if(!q||!q.lesion) return ''; return '<h3>Probable lesion type</h3><p style="margin:.2em 0"><b>'+esc(q.lesion)+'</b>'+(q.lesionConf!=null?' <span class="tiny">('+pct(+q.lesionConf)+'% confidence)</span>':'')+'</p>'+(q.differential.length?'<p class="tiny" style="margin:.2em 0">Also consider: '+q.differential.map(esc).join(', ')+'</p>':'')+(q.findings?'<p class="help" style="margin:.2em 0 .6em">'+esc(q.findings)+'</p>':'')+(q.warning?'<div class="note">'+esc(q.warning)+'</div>':''); })()+'<h3>Four-class estimate'+(d.imgs.length>1?' (photo '+(r.top+1)+', highest signal)':'')+'</h3>'+
+        CLASSES.map(function(c,k){ var v=r.probs[k], sd=(r.perImage[r.top].probs_sd||[])[k]; return '<div class="pbar"><span>'+c+'</span><div class="tr"><i style="width:'+pct(v,1)+'%;background:'+CLASS_COL[k]+'"></i></div><b>'+pct(v,1)+'%'+(sd?' <span class="tiny">±'+pct(sd,1)+'</span>':'')+'</b></div>'; }).join('')+
+        '<p class="tiny">OPMD: oral potentially malignant disorder. OCA: oral cancer. Suspicion = OPMD + OCA. Percentages describe the photo, not a diagnosis.</p></div>'+
+    '</div><div>'+resultViewer(d,r)+'</div></div>'+
+    '<div class="grid2">'+
+      '<div class="card"><h2>Why this signal</h2>'+(r.contrib?contribBars(r):'<p class="help">The connected model did not return attributions.</p>')+nometa+
+      (d.flags.length?'<h3>Red flags recorded</h3><ul>'+d.flags.map(function(f){ return '<li>'+esc(f)+'</li>'; }).join('')+'</ul>':'')+'</div>'+
+      '<div class="card"><h2>Reliability and uncertainty</h2>'+(rel.length?'<ul style="padding-left:1.1em;margin:0">'+rel.map(function(x){ return '<li style="margin:4px 0">'+x+'</li>'; }).join('')+'</ul>':'<p class="help">No reliability warnings.</p>')+
+      '<h3>Data used for this result</h3><p class="help" style="margin:0"><b>Used by the model:</b> '+d.imgs.length+' photo(s), age, sex, smoking, alcohol, chewing habit.<br><b>Used for the pathway only:</b> red flags, family history, earlier lesion, genetic flag, language and channel.<br><b>Not used:</b> name, nationality, address, any data outside the consent given.</p></div>'+
+    '</div>'+
+    '<div class="card"><h2>Recommended pathway</h2><p class="help">Population rules from the programme set the pathway; this person\'s clinician decides. Timings are placeholders until the approved guideline values are loaded.</p><ol class="path">'+
+      pathway.map(function(p){ return '<li><b>'+esc(p.t)+'</b><span class="help">'+esc(p.w)+(p.k!=='card'&&p.k!=='cessation'&&p.k!=='advice'?', due '+fmtD(p.due):'')+'</span></li>'; }).join('')+'</ol></div>'+
+    decisionCard(d,r)+
+    '<div class="disc">Screening aid only. Not a diagnosis. The clinician decides.</div>';
+  $('app').innerHTML=h; resultViewerInit(d,r);
+}
+function childResult(d){
+  $('app').innerHTML='<h1>Result <span class="tiny">'+d.id+'</span></h1><div class="tier" style="background:#0B7A75"><span class="ic">☺</span><div><b>Well-Child Visit oral-health pathway</b><span>No image score under 18: the model has not been validated in children.</span></div></div>'+
+    '<div class="card" style="margin-top:12px"><h2>Recommended pathway</h2><ol class="path"><li><b>Well-Child Visit oral-health check with a dentist</b><span class="help">Book within 4 weeks; photos and annotations are attached for the dentist</span></li><li><b>Fluoride varnish and a dental home, if indicated</b><span class="help">At the visit</span></li><li><b>Parent or caregiver advice</b><span class="help">Sugar, brushing, and keeping betel quid, areca nut and tobacco away from children</span></li>'+(d.flags.length?'<li><b>Red flag recorded: same-week dental or paediatric review</b><span class="help">'+esc(d.flags.join('; '))+'</span></li>':'')+'</ol></div>'+
+    decisionCard(d,{tier:'Child'})+'<div class="disc">Screening aid only. Not a diagnosis. The clinician decides.</div>';
+}
+function gauge(s,sd,thr,col){
+  var A=function(v){ var a=Math.PI*(1-v); return [60+50*Math.cos(a),62-50*Math.sin(a)]; };
+  var p=A(s), lo=A(clamp(s-sd,0,1)), hi=A(clamp(s+sd,0,1)), t1=A(thr), big=s>0.5?0:0;
+  return '<svg viewBox="0 0 120 74" width="190" role="img" aria-label="Suspicion signal '+pct(s)+' percent, threshold '+pct(thr)+' percent">'+
+    '<path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#E6ECEC" stroke-width="11" stroke-linecap="round"/>'+
+    '<path d="M10 62 A50 50 0 0 1 '+p[0].toFixed(2)+' '+p[1].toFixed(2)+'" fill="none" stroke="'+col+'" stroke-width="11" stroke-linecap="round"/>'+
+    '<path d="M'+lo[0].toFixed(2)+' '+lo[1].toFixed(2)+' A50 50 0 0 1 '+hi[0].toFixed(2)+' '+hi[1].toFixed(2)+'" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="3"/>'+
+    '<line x1="'+(60+40*Math.cos(Math.PI*(1-thr))).toFixed(2)+'" y1="'+(62-40*Math.sin(Math.PI*(1-thr))).toFixed(2)+'" x2="'+(60+60*Math.cos(Math.PI*(1-thr))).toFixed(2)+'" y2="'+(62-60*Math.sin(Math.PI*(1-thr))).toFixed(2)+'" stroke="#142629" stroke-width="2"/>'+
+    '<text x="60" y="58" text-anchor="middle" font-size="19" font-weight="700" fill="#142629">'+pct(s)+'%</text><text x="60" y="71" text-anchor="middle" font-size="7.5" fill="#56676B">suspicion</text></svg>';
+}
+function contribBars(r){
+  var tot=r.contrib.reduce(function(a,b){ return a+b[1]; },r.base||0), mx=Math.max.apply(0,r.contrib.map(function(c){ return Math.abs(c[1]); }));
+  return '<p class="help">'+(r.simulated?'How the simulator built the signal (additive parts).':'Image and metadata parts from the uniform-metadata test.')+'</p>'+
+    r.contrib.map(function(c){ return '<div class="contrib"><span>'+esc(c[0])+'</span><div class="tr"><i class="'+(c[1]<0?'n':'')+'" style="width:'+(Math.abs(c[1])/mx*100).toFixed(0)+'%"></i></div><b style="text-align:right">'+(c[1]>=0?'+':'')+pct(c[1])+'</b></div>'; }).join('')+
+    (r.base?'<div class="contrib"><span class="tiny">Baseline</span><div></div><b style="text-align:right" class="tiny">+'+pct(r.base)+'</b></div>':'')+
+    '<p class="tiny">Total '+pct(Math.min(tot,0.97))+' points (capped at 97).</p>';
+}
+/* viewer with heatmap and annotation toggles */
+function resultViewer(d,r){
+  if(!d.imgs.length) return '<div class="card"><p class="help">No photo was added.</p></div>';
+  var i=S.res.pv, pr=r.perImage[i]||r.perImage[0];
+  return '<div class="viewer"><div class="row sp" style="padding:2px 4px 8px"><b>Photo '+(i+1)+(d.imgs[i].site?': '+esc(d.imgs[i].site):'')+'</b><span class="chip" style="background:#1B3236;color:#fff">signal '+pct(pr.susp)+'%</span></div>'+
+    '<div class="stage"><canvas id="rescv" aria-label="Photo '+(i+1)+' with attention overlay"></canvas></div>'+
+    '<div class="bar"><button class="btn sm '+(S.res.heat?'on':'')+'" aria-pressed="'+S.res.heat+'" onclick="S.res.heat=!S.res.heat;render()">Attention map</button><button class="btn sm '+(S.res.ann?'on':'')+'" aria-pressed="'+S.res.ann+'" onclick="S.res.ann=!S.res.ann;render()">Clinician outline</button>'+
+    '<label for="hal" style="margin-left:6px">Opacity</label><input id="hal" type="range" min="0.1" max="0.9" step="0.05" value="'+S.res.alpha+'" style="width:120px;min-height:30px" oninput="S.res.alpha=+this.value;resultViewerInit(S.wiz.d,S.wiz.d.result)"></div>'+
+    (d.imgs.length>1?'<div class="thumbs">'+d.imgs.map(function(g,k){ var p=r.perImage[k]; return '<button class="thumb" aria-pressed="'+(k===i)+'" aria-label="Photo '+(k+1)+', signal '+pct(p.susp)+'%" onclick="S.res.pv='+k+';render()"><img src="'+(g.thumb||g.src)+'" alt=""><i>'+pct(p.susp)+'%</i></button>'; }).join('')+'</div>':'')+
+    '<p class="tiny" style="color:#AFC3C5;padding:4px">'+(pr.gradcam?'Attention map returned by the connected model service.':(pr.regions&&pr.regions.length)?'Attention map from the regions the connected model marked.':'Illustrative attention map built from the outline; the trained model returns Grad-CAM here.')+' Attention maps show where the model looked, not proof of a lesion.</p></div>';
+}
+function resultViewerInit(d,r){
+  var cv=$('rescv'); if(!cv||!d.imgs.length) return;
+  var i=S.res.pv, g=d.imgs[i], pr=r.perImage[i]||r.perImage[0], img=new Image();
+  img.onload=function(){
+    var sc=Math.min(1,1200/Math.max(img.naturalWidth,img.naturalHeight)); cv.width=Math.round(img.naturalWidth*sc); cv.height=Math.round(img.naturalHeight*sc);
+    var draw=function(heat){ drawOverlay(cv.getContext('2d'),cv.width,cv.height,img,S.res.ann?g.ann:[],{heat:S.res.heat?heat:null,heatAlpha:S.res.alpha,fill:0.06,showAnn:S.res.ann}); };
+    if(pr.gradcam){ var gi=new Image(); gi.onload=function(){ draw(gi); }; gi.src=pr.gradcam; }
+    else if(pr.regions&&pr.regions.length) draw(regionHeat(pr.regions,pr.susp,cv.width,cv.height));
+    else draw(simHeat(g,pr.susp,cv.width,cv.height));
+  };
+  img.src=g.src;
+}
+function regionHeat(regions,s,W,H){
+  var gw=64, gh=Math.max(8,Math.round(64*H/W)), c=document.createElement('canvas'); c.width=gw; c.height=gh;
+  var x=c.getContext('2d'), im=x.createImageData(gw,gh), vals=new Float32Array(gw*gh), mx=0;
+  var bx=regions.map(function(r){ var b=(r&&r.box_2d)||[]; return b.length===4?[b[1]/1000,b[0]/1000,b[3]/1000,b[2]/1000]:null; }).filter(Boolean);
+  for(var y=0;y<gh;y++) for(var xx=0;xx<gw;xx++){ var u=xx/gw, v=y/gh, val=0; bx.forEach(function(b){ var cx=(b[0]+b[2])/2, cy=(b[1]+b[3])/2, sx=Math.max(0.04,(b[2]-b[0])/2.2), sy=Math.max(0.04,(b[3]-b[1])/2.2); val+=Math.exp(-(Math.pow((u-cx)/sx,2)+Math.pow((v-cy)/sy,2))/2); }); vals[y*gw+xx]=val; if(val>mx) mx=val; }
+  if(!mx) return null;
+  for(var k=0;k<vals.length;k++){ var t=vals[k]/mx*(0.35+0.65*s), rgb=jet(t); im.data[k*4]=rgb[0]; im.data[k*4+1]=rgb[1]; im.data[k*4+2]=rgb[2]; im.data[k*4+3]=Math.round(255*clamp(t*1.3,0,1)); }
+  x.putImageData(im,0,0); return c;
+}
+function simHeat(g,s,W,H){
+  var gw=64, gh=Math.max(8,Math.round(64*H/W)), c=document.createElement('canvas'); c.width=gw; c.height=gh;
+  var x=c.getContext('2d'), im=x.createImageData(gw,gh), R=rng(Math.round(s*1000)+g.ann.length);
+  var cs=g.ann.length?g.ann.map(function(a){ var b=shapeBox(a); return [(b[0]+b[2])/2+(R()-0.5)*0.05,(b[1]+b[3])/2+(R()-0.5)*0.05,Math.max(0.06,Math.sqrt(shapeArea(a))*0.7),lt(a.type)[3]]; }):[[0.5+(R()-0.5)*0.2,0.55+(R()-0.5)*0.2,0.22,Math.max(0.15,s)]];
+  var vals=new Float32Array(gw*gh), mx=0;
+  for(var y=0;y<gh;y++) for(var xx=0;xx<gw;xx++){ var u=xx/gw, v=y/gh, val=0; cs.forEach(function(q){ var dx=(u-q[0]), dy=(v-q[1])*H/W; val+=q[3]*Math.exp(-(dx*dx+dy*dy)/(2*q[2]*q[2])); }); val+=0.04*R(); vals[y*gw+xx]=val; if(val>mx) mx=val; }
+  for(var k=0;k<vals.length;k++){ var t=vals[k]/mx*(0.35+0.65*s), rgb=jet(t); im.data[k*4]=rgb[0]; im.data[k*4+1]=rgb[1]; im.data[k*4+2]=rgb[2]; im.data[k*4+3]=Math.round(255*clamp(t*1.3,0,1)); }
+  x.putImageData(im,0,0); return c;
+}
+function jet(v){ var f=function(a){ return Math.round(255*clamp(1.5-Math.abs(4*v-a),0,1)); }; return [f(3),f(2),f(1)]; }
+
+/* ---- clinician decision ---- */
+function decisionCard(d,r){
+  var def={Urgent:'Urgent referral',Refer:'Refer',Review:'Specialist tele-review',Routine:'Routine recall',Child:'Well-Child Visit dental referral'}[r.tier];
+  var dec=d.decision||{agree:'',action:def,reason:'',note:''};
+  var acts=r.tier==='Child'?['Well-Child Visit dental referral','Same-week dental review']:['Routine recall','Specialist tele-review','Refer','Urgent referral'];
+  if(d.status!=='Draft'&&d.decision) return '<div class="card"><h2>Clinician decision</h2><div class="ok">Saved: <b>'+esc(d.decision.action)+'</b> ('+esc(d.decision.agree)+' with the suggestion)'+(d.decision.reason?'. Reason: '+esc(d.decision.reason):'')+'. Case status: <b>'+esc(d.status)+'</b>.</div>'+
+    '<div class="row"><button class="btn" onclick="S.view=\'Letter\';render()">Referral letter</button><button class="btn" onclick="S.view=\'Card\';render()">Prevention card</button><button class="btn" onclick="openCase(\''+d.id+'\')">Open case record</button><button class="btn p" onclick="S.wiz=null;newScreening();go(\'New screening\')">Next patient</button></div></div>';
+  return '<div class="card" id="deccard"><h2>Clinician decision</h2><p class="help">You can follow or override the suggestion. Overrides are expected and are used to check the model at this site.</p>'+
+    '<div class="seg" style="max-width:420px"><button id="dAg" class="'+(dec.agree==='Agree'?'on':'')+'" onclick="decSet(\'agree\',\'Agree\')">Agree</button><button id="dDg" class="'+(dec.agree==='Disagree'?'on':'')+'" onclick="decSet(\'agree\',\'Disagree\')">Disagree</button></div>'+
+    '<label class="f" for="dAct">Final action</label><select id="dAct" onchange="decSet(\'action\',this.value,1)">'+opts(acts,dec.action)+'</select>'+
+    '<div id="dReasonW" '+(dec.agree==='Disagree'?'':'hidden')+'><label class="f" for="dReason">Reason for overriding (required)</label><select id="dReason" onchange="decSet(\'reason\',this.value,1)">'+opts([['','Choose a reason'],'Clinical appearance differs from the photo','Photo quality or site not representative','Lesion explained by trauma, denture or other local cause','Patient history changes the risk','Other'],dec.reason)+'</select></div>'+
+    '<label class="f" for="dNote">Note (optional)</label><textarea id="dNote" oninput="decSet(\'note\',this.value,1)">'+esc(dec.note||'')+'</textarea>'+
+    '<div class="row" style="margin-top:12px"><button class="btn p" onclick="saveDecision()">Save decision and start follow-up</button></div></div>';
+}
+function decSet(k,v,quiet){ var d=S.wiz.d; d.decision=d.decision||{agree:'',action:$('dAct').value,reason:'',note:''}; d.decision[k]=v;
+  if(k==='agree'){ $('dAg').classList.toggle('on',v==='Agree'); $('dDg').classList.toggle('on',v==='Disagree'); $('dReasonW').hidden=v!=='Disagree'; } }
+function saveDecision(){
+  var d=S.wiz.d; d.decision=d.decision||{agree:'',action:$('dAct').value,reason:'',note:''};
+  if(!d.decision.agree){ toast('Choose Agree or Disagree.'); return; }
+  if(d.decision.agree==='Disagree'&&!d.decision.reason){ toast('Give a reason for the override.'); $('dReason').focus(); return; }
+  d.decision.by=S.role; d.decision.at=new Date().toISOString();
+  var a=d.decision.action;
+  d.status=/Routine/.test(a)?'Recall scheduled':/tele-review/.test(a)?'Awaiting specialist review':/Well-Child/.test(a)?'Referred':'Referred';
+  var days={'Routine recall':(d.chew==='Yes'||d.smoke==='Yes')?365:730,'Specialist tele-review':7,'Refer':28,'Urgent referral':14,'Well-Child Visit dental referral':28,'Same-week dental review':7}[a]||28;
+  d.due=addDays(today(),days).toISOString();
+  var rec=JSON.parse(JSON.stringify(d)); var ix=DB.cases.findIndex(function(c){ return c.id===d.id; });
+  if(ix>-1) DB.cases[ix]=rec; else DB.cases.unshift(rec);
+  audit('Clinician decision saved',d.id+': '+a+' ('+d.decision.agree+(d.decision.reason?', '+d.decision.reason:'')+')','Care decision');
+  saveDB(); toast('Decision saved. Follow-up due '+fmtD(d.due)); render();
+}
+
+/* =====================================================================
+   REFERRAL LETTER AND PREVENTION CARD
+   ===================================================================== */
+function letter(){
+  var d=S.wiz&&S.wiz.d; if(!d||!d.result){ $('app').innerHTML='<h1>Referral letter</h1><div class="card">Complete a screening first.</div>'; return; }
+  var r=d.result, L=S.letter=S.letter||{to:'Oral medicine',urg:/Urgent/.test((d.decision||{}).action||r.tier)?'Urgent (within 2 weeks)':'Routine (within 4 weeks)'};
+  var ann=[]; d.imgs.forEach(function(g,i){ g.ann.forEach(function(a){ ann.push('Photo '+(i+1)+(g.site?' ('+g.site+')':'')+': '+lt(a.type)[1]+', about '+(shapeArea(a)*100).toFixed(1)+'% of frame'); }); });
+  var body='<h2 style="margin-top:0">Referral for specialist oral assessment</h2><table>'+
+    '<tr><td><b>Date</b></td><td>'+fmtD(today())+'</td></tr><tr><td><b>To</b></td><td>'+esc(L.to)+'</td></tr><tr><td><b>Urgency</b></td><td>'+esc(L.urg)+'</td></tr>'+
+    '<tr><td><b>From</b></td><td>'+esc(DB.settings.siteName)+'</td></tr><tr><td><b>Patient</b></td><td>'+d.id+', '+esc(d.age)+' years, '+esc(d.sex||'sex not recorded')+', prefers '+esc(langShort(d.lang))+'</td></tr>'+
+    '<tr><td><b>Risk factors</b></td><td>Smoking: '+d.smoke+(d.tob.length?' ('+esc(d.tob.join(', '))+')':'')+'; chewing: '+d.chew+(d.chewT.length?' ('+esc(d.chewT.join(', '))+')':'')+'; alcohol: '+d.alcohol+'; family history: '+d.famhx+'</td></tr>'+
+    '<tr><td><b>Red flags</b></td><td>'+(d.flags.length?esc(d.flags.join('; ')):'None recorded')+'</td></tr>'+
+    '<tr><td><b>Lesions marked</b></td><td>'+(ann.length?ann.map(esc).join('<br>'):'None outlined')+'</td></tr>'+
+    (r.minor?'':'<tr><td><b>Screening signal</b></td><td>'+TIERS[r.tier].t+', suspicion '+pct(r.susp)+'% (threshold '+pct(r.threshold)+'%)'+(r.simulated?' <b>[SIMULATED, demo]</b>':' ['+esc(r.model)+']')+'</td></tr>')+
+    '<tr><td><b>Clinician action</b></td><td>'+esc((d.decision||{}).action||'not yet recorded')+((d.decision||{}).note?'<br>'+esc(d.decision.note):'')+'</td></tr></table>'+
+    '<div class="row" style="margin:12px 0;line-height:0">'+d.imgs.map(function(g){ return '<img src="'+(g.thumb||g.src)+'" alt="" style="width:150px;border-radius:4px">'; }).join('')+'</div>'+
+    '<p>Dear colleague, I would be grateful if you could assess this patient. The photographs and outlines are attached in the OralGuard record. The screening signal supports, but does not replace, clinical judgement.</p>'+
+    '<p style="margin-top:36px">Signature ____________________ Name and licence no. ____________________</p><p class="tiny">Screening aid only. Not a diagnosis.</p>';
+  $('app').innerHTML='<h1 class="noprint">Referral letter</h1><div class="card noprint"><div class="fgrid"><div><label class="f" for="lto">Refer to</label><select id="lto" onchange="S.letter.to=this.value;letter()">'+opts(['Oral medicine','Oral and maxillofacial surgery','Head and neck oncology','Paediatric dentistry'],L.to)+'</select></div>'+
+    '<div><label class="f" for="lur">Urgency</label><select id="lur" onchange="S.letter.urg=this.value;letter()">'+opts(['Urgent (within 2 weeks)','Routine (within 4 weeks)'],L.urg)+'</select></div></div>'+
+    '<div class="row" style="margin-top:12px"><button class="btn q" onclick="S.view=\'New screening\';render()">Back to result</button><button class="btn p" onclick="audit(\'Referral letter printed\',S.wiz.d.id,\'Referral\');window.print()">Print or save as PDF</button></div></div><div class="paper">'+body+'</div>';
+}
+function pcard(){
+  var d=S.wiz&&S.wiz.d; if(!d){ $('app').innerHTML='<h1>Prevention card</h1><div class="card">Complete a screening first.</div>'; return; }
+  var L=S.cardLang||d.lang||'en', c=CARD[L], dir=LANGS[L].dir;
+  function item(x,extra){ var a=x.split('|'); return '<div class="pc-item"><b>'+a[0]+'</b><br>'+(a[1]||'')+(extra||'')+'</div>'; }
+  var any=false, h='<h2 style="margin-top:0">'+c.t+'</h2><p>'+c.i+'</p>';
+  if(d.smoke==='Yes'){ h+=item(d.tob.some(function(t){ return /Dokha|Shisha/.test(t); })?c.dk:c.sm); any=true; }
+  if(d.chew==='Yes'){ h+=item(c.be); any=true; }
+  if(d.alcohol==='Yes'){ h+=item(c.al); any=true; }
+  if(!any) h+=item(c.ge);
+  h+=item(c.se)+item(c.re)+item(c.ro,'<span dir="ltr">'+fmtD(d.due||addDays(today(),365))+'</span>')+'<p class="tiny">'+c.f+'</p>';
+  $('app').innerHTML='<h1 class="noprint">Prevention card</h1><div class="card noprint"><p class="help">Shown in the patient\'s preferred language. Advice is chosen from their answers. Translations are drafts for review by native-speaking clinicians.</p><div class="seg">'+
+    Object.keys(LANGS).map(function(k){ return '<button class="'+(L===k?'on':'')+'" onclick="S.cardLang=\''+k+'\';pcard()">'+LANGS[k].n.replace(/ \(.*\)/,'')+'</button>'; }).join('')+'</div>'+
+    '<div class="row" style="margin-top:12px"><button class="btn q" onclick="S.view=\'New screening\';render()">Back to result</button><button class="btn p" onclick="audit(\'Prevention card printed\',S.wiz.d.id+\' (\'+(S.cardLang||S.wiz.d.lang)+\')\',\'Prevention\');window.print()">Print</button>'+
+    (d.consent.contact&&d.channel!=='No contact'?'<button class="btn" onclick="toast(\'Preview only: nothing is sent in the demo.\')">Send by '+esc(d.channel)+' (preview)</button>':'<span class="tiny">No contact consent: print only.</span>')+'</div></div>'+
+    '<div class="paper" lang="'+L+'" dir="'+dir+'" style="font-size:1.06rem">'+h+'</div>';
+}
+/* =====================================================================
+   CASES, SPECIALIST TELE-REVIEW AND REFERRAL LOOP
+   ===================================================================== */
+function tierChip(t){ var m={Urgent:'r',Refer:'r',Review:'a',Routine:'g',Child:'t'}[t]||''; return '<span class="chip '+m+'">'+(TIERS[t]?TIERS[t].ic+' ':'')+(t||'-')+'</span>'; }
+function cases(){
+  var tab=S.sub.cases||(S.role==='Specialist reviewer'?'review':'all');
+  var F={all:function(){ return true; },review:function(c){ return /Awaiting/.test(c.status); },open:function(c){ return /Referred|booked|Reviewed: refer/.test(c.status); },over:caseOverdue};
+  var list=DB.cases.filter(F[tab]);
+  var cnt=function(k){ return DB.cases.filter(F[k]).length; };
+  var h='<h1>Cases</h1><div class="tabs" role="tablist">'+[['all','All'],['review','Awaiting specialist review'],['open','Open referrals'],['over','Overdue follow-up']].map(function(t){ return '<button role="tab" aria-selected="'+(tab===t[0])+'" class="'+(tab===t[0]?'on':'')+'" onclick="S.sub.cases=\''+t[0]+'\';render()">'+t[1]+' ('+cnt(t[0])+')</button>'; }).join('')+'</div>';
+  if(tab==='review') h+='<div class="info">Tele-review lets a specialist look at the photos and outlines remotely, so only people who need an in-person assessment travel. '+(can('review')?'Open a case to record your impression.':'Switch to the Specialist reviewer role to record a review.')+'</div>';
+  h+='<div class="card" style="padding:0"><div class="tw"><table class="t"><thead><tr><th>ID</th><th>Screened</th><th>Patient</th><th>Area</th><th>Suggestion</th><th class="num">Signal</th><th>Status</th><th>Due</th></tr></thead><tbody>'+
+    (list.length?list.map(function(c){ var r=c.result||{}; return '<tr class="cl" onclick="openCase(\''+c.id+'\')"><td><button class="lnk" onclick="event.stopPropagation();openCase(\''+c.id+'\')">'+c.id+'</button></td><td>'+fmtD(c.created)+'</td><td>'+c.age+' y, '+esc((c.sex||'-').charAt(0))+'</td><td>'+esc(c.community||'-')+'</td><td>'+tierChip(r.tier)+'</td><td class="num">'+(r.susp!=null?pct(r.susp)+'%':'-')+'</td><td>'+esc(c.status)+'</td><td>'+(caseOverdue(c)?'<span class="chip r">overdue '+fmtD(c.due)+'</span>':fmtD(c.due))+'</td></tr>'; }).join(''):'<tr><td colspan="8" class="help">No cases in this list.</td></tr>')+
+    '</tbody></table></div></div><p class="tiny">Cases marked as seeded are simulated examples. Your own screenings appear at the top.</p>';
+  $('app').innerHTML=h;
+}
+function openDrawer(html){ var r=$('dlgroot'); r.innerHTML='<div id="scrim" onclick="closeDrawer()"></div><aside id="drawer" role="dialog" aria-modal="true" aria-label="Details">'+html+'</aside>'; var b=$('drawer').querySelector('button'); if(b) b.focus(); }
+function closeDrawer(silent){ var r=$('dlgroot'); if(r&&r.querySelector('#drawer')) r.innerHTML=''; }
+function findCase(id){ return DB.cases.filter(function(c){ return c.id===id; })[0]; }
+function openCase(id){
+  var c=findCase(id); if(!c){ if(S.wiz&&S.wiz.d.id===id){ toast('Save the decision first.'); } return; }
+  var r=c.result||{}, tl=DB.audit.filter(function(a){ return a.data.indexOf(c.id)>-1; }).slice(0,12);
+  var h='<div class="row sp"><h2 style="margin:0">'+c.id+'</h2><button class="btn sm" onclick="closeDrawer()">Close</button></div>'+
+    '<p>'+c.age+' years, '+esc(c.sex||'-')+', '+esc(c.community||'-')+', prefers '+esc(langShort(c.lang))+' by '+esc(c.channel||'-')+'. Screened '+fmtD(c.created)+(c.seeded?' <span class="chip">simulated case</span>':'')+'</p>'+
+    '<div class="row" style="gap:6px">'+tierChip(r.tier)+(r.susp!=null?'<span class="chip">signal '+pct(r.susp)+'%</span>':'')+'<span class="chip t">'+esc(c.status)+'</span>'+(caseOverdue(c)?'<span class="chip r">overdue</span>':'')+'</div>'+
+    '<div class="viewer" style="margin-top:12px"><div class="stage" style="min-height:120px"><canvas id="cvc"></canvas></div>'+
+    (c.imgs.length>1?'<div class="thumbs">'+c.imgs.map(function(g,k){ return '<button class="thumb" onclick="drawCaseImg(\''+c.id+'\','+k+')"><img src="'+(g.thumb||g.src)+'" alt="Photo '+(k+1)+'"></button>'; }).join('')+'</div>':'')+
+    '<p class="tiny" style="color:#AFC3C5;padding:4px">'+c.imgs.map(function(g,k){ return 'Photo '+(k+1)+(g.site?' ('+esc(g.site)+')':'')+': '+(g.ann.length?g.ann.map(function(a){ return lt(a.type)[1]; }).join(', '):g.noLesion?'no visible lesion':'not annotated'); }).join('. ')+'</p></div>'+
+    (r.probs?'<h3>Model output'+(r.simulated?' (simulated)':'')+'</h3>'+CLASSES.map(function(cl,k){ return '<div class="pbar"><span>'+cl+'</span><div class="tr"><i style="width:'+pct(r.probs[k],1)+'%;background:'+CLASS_COL[k]+'"></i></div><b>'+pct(r.probs[k],1)+'%</b></div>'; }).join(''):'')+
+    '<h3>Screener</h3><p>Smoking '+c.smoke+', chewing '+c.chew+', alcohol '+c.alcohol+'. '+(c.flags.length?'Red flags: '+esc(c.flags.join('; '))+'. ':'No red flags. ')+'Decision: <b>'+esc((c.decision||{}).action||'-')+'</b> ('+esc((c.decision||{}).agree||'-')+')'+((c.decision||{}).reason?', '+esc(c.decision.reason):'')+'.</p>'+
+    (c.review?'<div class="ok"><b>Specialist review</b>: impression '+esc(c.review.impression)+', plan '+esc(c.review.plan)+(c.review.comment?'. '+esc(c.review.comment):'')+' ('+fmtD(c.review.at)+')</div>':'')+
+    (c.outcome?'<div class="info"><b>Outcome recorded</b>: '+esc(c.outcome.result)+' ('+fmtD(c.outcome.at)+')</div>':'')+
+    caseActions(c)+
+    '<h3>Timeline</h3>'+(tl.length?'<ul class="help" style="padding-left:1.1em">'+tl.map(function(a){ return '<li>'+fmtDT(a.t)+': '+esc(a.action)+' ('+esc(a.role)+')</li>'; }).join('')+'</ul>':'<p class="help">Seeded case: no logged events.</p>');
+  openDrawer(h); drawCaseImg(c.id,0);
+}
+function drawCaseImg(id,k){ var c=findCase(id), g=c.imgs[k], cv=$('cvc'); if(!cv||!g) return; var im=new Image(); im.onload=function(){ var sc=Math.min(1,900/Math.max(im.naturalWidth,im.naturalHeight)); cv.width=im.naturalWidth*sc; cv.height=im.naturalHeight*sc; drawOverlay(cv.getContext('2d'),cv.width,cv.height,im,g.ann,{fill:0.15}); }; im.src=g.src; }
+function caseActions(c){
+  if(/Awaiting/.test(c.status)){
+    if(!can('review')) return '<div class="note">Waiting for a specialist. <button class="lnk" onclick="setRole(\'Specialist reviewer\',true);openCase(\''+c.id+'\')">Review as specialist</button></div>';
+    return '<div class="card" style="margin-top:12px"><h3>Record specialist review</h3><label class="f" for="rvI">Impression from the photos</label><select id="rvI">'+opts(['Healthy / normal variant','Benign','OPMD','OCA suspected','Cannot tell from photos'],'')+'</select>'+
+      '<label class="f" for="rvP">Plan</label><select id="rvP">'+opts(['Refer for in-person assessment and biopsy','Recall in 3 months with new photos','Return to routine recall'],'')+'</select>'+
+      '<label class="f" for="rvC">Comment to the screener</label><textarea id="rvC"></textarea><div class="row" style="margin-top:10px"><button class="btn p" onclick="saveReview(\''+c.id+'\')">Save review</button></div></div>';
+  }
+  var nx={'Referred':['Appointment booked','Mark appointment booked'],'Reviewed: refer':['Appointment booked','Mark appointment booked'],'Appointment booked':['Attended','Mark attended']};
+  var a='';
+  if(nx[c.status]) a+='<button class="btn p" onclick="caseStatus(\''+c.id+'\',\''+nx[c.status][0]+'\')">'+nx[c.status][1]+'</button>';
+  if(c.status==='Attended') a+='<button class="btn p" onclick="recordOutcome(\''+c.id+'\')">Record outcome</button>';
+  if(/Referred|booked|Reviewed: refer/.test(c.status)) a+='<button class="btn" onclick="toast(\'Reminder preview only: nothing is sent.\');audit(\'Referral reminder prepared\',\''+c.id+'\',\'Follow-up\');saveDB()">Send reminder (preview)</button>';
+  return a?'<div class="row" style="margin-top:12px">'+a+'</div>':'';
+}
+function saveReview(id){
+  var c=findCase(id), imp=$('rvI').value, plan=$('rvP').value;
+  if(!imp||!plan){ toast('Choose an impression and a plan.'); return; }
+  c.review={impression:imp,plan:plan,comment:$('rvC').value,by:S.role,at:new Date().toISOString()};
+  c.status=/Refer/.test(plan)?'Reviewed: refer':'Reviewed: recall'; c.due=addDays(today(),/Refer/.test(plan)?28:/3 months/.test(plan)?90:365).toISOString();
+  audit('Specialist review saved',id+': '+imp+'; '+plan,'Tele-review'); saveDB(); toast('Review saved'); render(); openCase(id);
+}
+function caseStatus(id,st){ var c=findCase(id); c.status=st; audit('Referral status: '+st,id,'Follow-up'); saveDB(); render(); openCase(id); }
+function recordOutcome(id){ var v=prompt('Outcome (for example: histopathology result or clinical diagnosis):',''); if(!v) return; var c=findCase(id); c.outcome={result:v,at:new Date().toISOString()}; c.status='Outcome recorded'; audit('Outcome recorded',id,'Loop closed; local model check'); saveDB(); render(); openCase(id); }
+
+/* =====================================================================
+   OUTREACH (population prioritization, not clinical decisions)
+   ===================================================================== */
+function outreach(){
+  if(!DB.people) DB.people=mkPeople();
+  var P=DB.people, f=S.of=S.of||{c:'',l:'',g:'',a:''}, set=DB.settings;
+  var rows=P.filter(function(p){ return (!f.c||p.comm===f.c)&&(!f.l||p.lang===f.l)&&(!f.a||(f.a==='child'?p.kid:!p.kid))&&(!f.g||(f.g==='none'?!p.fl.length:p.fl.indexOf(f.g)>-1)); }).sort(function(a,b){ return b.pr-a.pr; });
+  var gaps=['Never screened','Overdue','Missed recall','Referral not completed','WCV overdue'];
+  var gc=gaps.map(function(g){ return [g,P.filter(function(p){ return p.fl.indexOf(g)>-1; }).length]; });
+  function sel(k,lab,arr){ return '<div><label class="f" for="f'+k+'" style="margin-top:0">'+lab+'</label><select id="f'+k+'" onchange="S.of.'+k+'=this.value;S.focusId=\'f'+k+'\';render()">'+opts([['','All']].concat(arr),f[k])+'</select></div>'; }
+  var h='<h1>Outreach</h1><div class="disc">Population prioritization to decide whom to invite first. It is not an individual clinical decision.</div>'+
+    '<div class="grid">'+gc.map(function(g){ return kpi(g[1],g[0]); }).join('')+'</div>'+
+    '<div class="card" style="margin-top:14px"><div class="fgrid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">'+
+      sel('c','Area',COMMUNITIES)+sel('l','Language',Object.keys(LANGS).map(function(k){ return [k,langShort(k)]; }))+sel('a','Group',[['adult','Adults'],['child','Children (Well-Child Visit)']])+sel('g','Care gap',gaps.map(function(x){ return [x,x]; }).concat([['none','No gap']]))+'</div>'+
+    '<p class="help" style="margin-top:10px">Contact rules: at most '+set.contactCap+' contacts per person per month; no messages between '+set.quietStart+' and '+set.quietEnd+(set.ramadan?'; Ramadan scheduling on (messages after Iftar)':'')+'. A decline or STOP stops all reminders. <button class="lnk" onclick="outreachSettings()">Change contact rules</button></p></div>'+
+    '<div class="card" style="padding:0"><div class="tw"><table class="t"><thead><tr><th>ID</th><th>Group</th><th>Area</th><th>Language</th><th>Channel</th><th class="num">Priority</th><th>Care gaps</th><th>Status</th></tr></thead><tbody>'+
+    rows.map(function(p){ var st=DB.outreach[p.id]; return '<tr class="cl" onclick="openPerson(\''+p.id+'\')"><td><button class="lnk" onclick="event.stopPropagation();openPerson(\''+p.id+'\')">'+p.id+'</button></td><td>'+p.band+'</td><td>'+p.comm+'</td><td>'+langShort(p.lang)+'</td><td>'+p.ch.replace(' (community health worker)','')+'</td><td class="num"><b>'+p.pr+'</b></td><td>'+(p.fl.map(function(x){ return '<span class="chip '+(/Referral/.test(x)?'r':'a')+'">'+x+'</span>'; }).join('')||'<span class="tiny">none</span>')+'</td><td>'+(st?esc(st.s):'Not contacted')+'</td></tr>'; }).join('')+
+    '</tbody></table></div></div><p class="tiny">'+rows.length+' of '+P.length+' simulated people. Priority points and pathway timings are placeholders until the programme\'s approved rules are loaded.</p>';
+  $('app').innerHTML=h;
+  if(S.focusId){ var e=$(S.focusId); if(e) e.focus(); S.focusId=null; }
+}
+function outreachSettings(){
+  if(!can('outreach')){ openDrawer('<div class="row sp"><h2 style="margin:0">Contact rules</h2><button class="btn sm" onclick="closeDrawer()">Close</button></div>'+needRole('outreach')); return; }
+  var s=DB.settings;
+  openDrawer('<div class="row sp"><h2 style="margin:0">Contact rules</h2><button class="btn sm" onclick="closeDrawer()">Close</button></div>'+
+    '<label class="f" for="ocap">Maximum contacts per person per month</label><input id="ocap" type="number" min="1" max="6" value="'+s.contactCap+'">'+
+    '<div class="fgrid"><div><label class="f" for="oqs">Quiet hours start</label><input id="oqs" type="text" value="'+s.quietStart+'"></div><div><label class="f" for="oqe">Quiet hours end</label><input id="oqe" type="text" value="'+s.quietEnd+'"></div></div>'+
+    '<label class="chk"><input type="checkbox" id="oram" '+(s.ramadan?'checked':'')+'><span><b>Ramadan scheduling</b><br><span class="help">Send messages and calls after Iftar; avoid prayer times.</span></span></label>'+
+    '<button class="btn p" style="margin-top:12px" onclick="DB.settings.contactCap=+$(\'ocap\').value||2;DB.settings.quietStart=$(\'oqs\').value;DB.settings.quietEnd=$(\'oqe\').value;DB.settings.ramadan=$(\'oram\').checked;audit(\'Contact rules changed\',\'cap \'+DB.settings.contactCap,\'Outreach governance\');saveDB();render()">Save rules</button>');
+}
+function openPerson(id){
+  var p=DB.people.filter(function(x){ return x.id===id; })[0], st=DB.outreach[id]||{s:'Not contacted',n:0}, dec=st.s==='Declined';
+  var lang=p.lang, kind=p.ref==='Not completed'?'f':p.kid?'c':'a', m=MSG[lang][kind].replace('{clinic}',DB.settings.siteName);
+  var voice=/Phone|person/.test(p.ch);
+  var h='<div class="row sp"><h2 style="margin:0">'+p.id+(p.kid?' (child; parent or caregiver contact)':'')+'</h2><button class="btn sm" onclick="closeDrawer()">Close</button></div>'+
+    '<p>'+p.band+', '+(p.sex==='F'?'female':'male')+', '+p.comm+'. Prefers '+langShort(lang)+' by '+p.ch.toLowerCase()+'. '+(p.kid?'Well-Child Visit oral check: '+p.wcv:'Last oral examination: '+(p.mo===null?'none on record':p.mo+' months ago'))+'.</p>'+
+    '<h3>Why this person is on the list (priority '+p.pr+')</h3><div>'+p.q.map(function(x){ return '<div class="contrib"><span>'+esc(x[0])+'</span><div class="tr"><i class="'+(x[2]==='gap'?'':'n')+'" style="width:'+(x[1]/3*100)+'%"></i></div><b style="text-align:right">+'+x[1]+'</b></div>'; }).join('')+'</div>'+
+    '<p class="tiny">Teal bars: care gaps. Grey bars: risk factors. Missing answers add no points and are asked at contact.</p>'+
+    '<h3>Suggested pathway</h3><ol class="path">'+personPathway(p).map(function(x){ return '<li><b>'+esc(x[0])+'</b><span class="help">'+esc(x[1])+'</span></li>'; }).join('')+'</ol>'+
+    '<h3>'+(voice?'Call script':'Message preview')+' ('+esc(p.ch)+', '+langShort(lang)+')</h3>'+
+    '<div class="sub" lang="'+lang+'" dir="'+LANGS[lang].dir+'">'+esc(m)+'</div>'+
+    (voice?'<p class="help">Introduce yourself, read the message, offer two appointment times, and ask whether they would like information in another language. Use a trained interpreter if needed.</p>':'')+
+    (lang!=='en'?'<details><summary class="help">English meaning</summary><div class="sub">'+esc(MSG.en[kind].replace('{clinic}',DB.settings.siteName))+'</div></details>':'')+
+    '<p class="tiny">Preview only. Nothing is sent. Contacts this month: '+(st.n||0)+' of '+DB.settings.contactCap+'.</p>'+
+    (dec?'<div class="note"><b>Decision respected.</b> No further reminders.'+(st.reason?' Reason: '+esc(st.reason):'')+'</div>':'')+
+    (can('outreach')?'<label class="f" for="rsn">Reason if declined (optional)</label><input type="text" id="rsn" value="'+esc(dec?st.reason:'')+'">'+
+    '<div class="row" style="margin-top:10px">'+['Invited','Booked','Attended','Deferred','Declined'].map(function(b){ var dis=(dec&&b==='Invited')||(b==='Invited'&&(st.n||0)>=DB.settings.contactCap); return '<button class="btn sm '+(st.s===b?'p':'')+'" '+(dis?'disabled':'')+' onclick="setOut(\''+p.id+'\',\''+b+'\')">'+b+'</button>'; }).join('')+'</div>':needRole('outreach'))+
+    '<p>Status: <b>'+esc(st.s)+'</b></p>';
+  openDrawer(h);
+}
+function setOut(id,s){
+  var st=DB.outreach[id]||{s:'Not contacted',n:0};
+  st.s=s; if(s==='Invited') st.n=(st.n||0)+1; if(s==='Declined') st.reason=$('rsn').value;
+  DB.outreach[id]=st; audit('Outreach status: '+s,id,'Population outreach'+(s==='Declined'?'; opt-out recorded':'')); saveDB(); render(); openPerson(id);
+}
+/* =====================================================================
+   POPULATION SAFEGUARDS (simulated data, small-cell suppression)
+   ===================================================================== */
+var DIMS={comm:['Area',COMMUNITIES],lang:['Language',['ar','en','bn','ur','hi']],band:['Age band',['18-29','30-44','45-59','60+']],sex:['Sex',['F','M']]};
+function sup(){ return DB.settings.supp; }
+function cnt(v){ return v<sup()?'<span class="sup">&lt;'+sup()+'</span>':v; }
+function rate(n,d){ return d<sup()||(n>0&&n<sup()&&d<sup()*3)?null:n/d; }
+function rtxt(r){ return r===null?'<span class="sup">Insufficient data</span>':pct(r)+'%'; }
+function lab(dim,v){ return dim==='lang'?langShort(v):dim==='sex'?(v==='F'?'Female':'Male'):v; }
+function popAgg(g){
+  var inv=g.filter(function(p){ return p.inv; }), att=g.filter(function(p){ return p.att; }), fl=att.filter(function(p){ return p.flagged; }), conf=fl.filter(function(p){ return p.outcome!==null; });
+  return {e:g.length,i:inv.length,a:att.length,f:fl.length,rv:att.filter(function(p){ return p.review; }).length,c:conf.length,fp:conf.filter(function(p){ return !p.outcome; }).length,fn:att.filter(function(p){ return p.fnSeen; }).length};
+}
+function population(){
+  if(!POP) POP=mkPop();
+  var dim=S.sub.dim||'comm', all=popAgg(POP), overallUp=all.a/all.i;
+  var segs=DIMS[dim][1].map(function(v){ return [v,popAgg(POP.filter(function(p){ return p[dim]===v; }))]; });
+  var h='<h1>Population safeguards</h1><div class="note"><b>Simulated population</b> of '+POP.length+' eligible adults across five areas. Not real data. Shows how a programme would watch reach, uptake, recommendation rates and error patterns by segment.</div>'+
+    '<div class="grid">'+kpi(pct(all.i/all.e)+'%','Reach (invited of eligible)')+kpi(pct(all.a/all.i)+'%','Uptake (screened of invited)')+kpi(pct(all.f/all.a)+'%','Referral recommendation rate')+kpi(pct(all.fp/all.c)+'%','False positives among confirmed referrals')+'</div>'+
+    '<div class="card" style="margin-top:14px"><div class="row sp"><h2 style="margin:0">By segment</h2><div class="seg" style="min-width:300px">'+Object.keys(DIMS).map(function(k){ return '<button class="'+(dim===k?'on':'')+'" onclick="S.sub.dim=\''+k+'\';render()">'+DIMS[k][0]+'</button>'; }).join('')+'</div></div>'+
+    '<div class="tw" style="margin-top:10px"><table class="t"><thead><tr><th>'+DIMS[dim][0]+'</th><th class="num">Eligible</th><th class="num">Reach</th><th class="num">Screened</th><th class="num">Uptake</th><th class="num">Referral rate</th><th class="num">False-positive share</th><th class="num">Missed, found later</th><th></th></tr></thead><tbody>'+
+    segs.map(function(s){ var a=s[1], up=rate(a.a,a.i), gap=up!==null&&up<overallUp-0.08;
+      return '<tr><td><b>'+lab(dim,s[0])+'</b></td><td class="num">'+cnt(a.e)+'</td><td class="num">'+rtxt(rate(a.i,a.e))+'</td><td class="num">'+cnt(a.a)+'</td><td class="num">'+rtxt(up)+'</td><td class="num">'+rtxt(rate(a.f,a.a))+'</td><td class="num">'+rtxt(rate(a.fp,a.c))+'</td><td class="num">'+cnt(a.fn)+'</td><td>'+(gap?'<span class="chip a">uptake gap</span>':'')+'</td></tr>'; }).join('')+
+    '</tbody></table></div><p class="tiny">False-positive share: referrals whose specialist outcome was not OPMD or cancer. Missed, found later: screened as not suspicious but found suspicious at a later visit, a lower bound because not everyone returns. An uptake gap is flagged when a segment is more than 8 points below the overall uptake.</p></div>'+
+    '<div class="grid2"><div class="card"><h2>Uptake by '+DIMS[dim][0].toLowerCase()+'</h2>'+segChart(segs,dim)+'</div>'+
+    '<div class="card"><h2>Small-number suppression</h2><p>Counts below <b>'+sup()+'</b> show as "&lt;'+sup()+'" and rates built on them show "Insufficient data", so people in small groups cannot be identified and noisy rates are not over-read.</p>'+
+    (can('admin')?'<label class="f" for="supv">Suppression threshold</label><input type="number" id="supv" min="5" max="50" value="'+sup()+'" style="max-width:140px" onchange="DB.settings.supp=clamp(+this.value||10,5,50);audit(\'Suppression threshold changed\',String(DB.settings.supp),\'Population governance\');saveDB();render()">':'<p class="tiny">Programme admin can change the threshold.</p>')+
+    '<p class="help">Al Dhafra is deliberately small in this simulation to show suppression.</p></div></div>';
+  $('app').innerHTML=h;
+}
+function segChart(segs,dim){
+  var ok=segs.filter(function(s){ return rate(s[1].a,s[1].i)!==null; }), om=segs.filter(function(s){ return rate(s[1].a,s[1].i)===null; });
+  return ok.map(function(s){ var u=s[1].a/s[1].i; return '<div class="bar-h"><span>'+lab(dim,s[0])+'</span><div class="tr"><i style="width:'+pct(u)+'%"></i></div><b>'+pct(u)+'%</b></div>'; }).join('')+(om.length?'<p class="tiny">Not shown, insufficient data: '+om.map(function(s){ return lab(dim,s[0]); }).join(', ')+'.</p>':'');
+}
+
+/* =====================================================================
+   OUTCOMES AND CALIBRATION
+   ===================================================================== */
+function outcomes(){
+  if(!POP) POP=mkPop();
+  var P=POP, att=P.filter(function(p){ return p.att; }), fl=att.filter(function(p){ return p.flagged; }), ra=fl.filter(function(p){ return p.refAtt; });
+  var timely=ra.filter(function(p){ return p.days<=28; }).length, days=ra.map(function(p){ return p.days; }).sort(function(a,b){ return a-b; }), med=days[Math.floor(days.length/2)];
+  var tp=ra.filter(function(p){ return p.outcome; }).length, rd=att.filter(function(p){ return p.recallDue; }), rdc=rd.filter(function(p){ return p.recallDone; }).length;
+  var funnel=[['Eligible',P.length],['Invited',P.filter(function(p){ return p.inv; }).length],['Booked',P.filter(function(p){ return p.booked; }).length],['Screened',att.length],['Referral suggested',fl.length],['Referral attended',ra.length],['Confirmed OPMD or cancer',tp]];
+  var cal=calib(att.map(function(p){ return [p.score,p.truth?1:0]; }));
+  var my=DB.cases.filter(function(c){ return c.decision; }), ag=my.filter(function(c){ return c.decision.agree==='Agree'; }).length;
+  var reasons={}; my.forEach(function(c){ if(c.decision.reason) reasons[c.decision.reason]=(reasons[c.decision.reason]||0)+1; });
+  var h='<h1>Outcomes</h1><div class="note"><b>Simulated programme data</b> except the "Cases in this tool" panel, which counts screenings saved here.</div>'+
+    '<div class="grid">'+kpi(att.length,'Completed screenings')+kpi(pct(timely/ra.length)+'%','Referrals seen within 28 days')+kpi(med+' days','Median time to specialist')+kpi(pct(rdc/rd.length)+'%','Recall and follow-up completed')+kpi(pct(tp/ra.length)+'%','Referrals confirmed OPMD or cancer')+kpi(P.filter(function(p){ return p.cess; }).length,'Cessation support enrolments')+'</div>'+
+    '<div class="grid2" style="margin-top:14px"><div class="card"><h2>From invitation to confirmed finding</h2>'+funnel.map(function(f,i){ return '<div class="bar-h"><span>'+f[0]+'</span><div class="tr"><i style="width:'+(f[1]/funnel[0][1]*100).toFixed(1)+'%;'+(i>3?'background:#A35C00':'')+'"></i></div><b>'+f[1]+'</b></div>'; }).join('')+
+    '<p class="tiny">Drop-offs show where to act: booking-to-attendance and referral attendance are the usual leaks. Number needed to screen per confirmed finding: '+Math.round(att.length/Math.max(1,tp))+'.</p></div>'+
+    '<div class="card"><h2>Calibration</h2>'+calSvg(cal)+'<p class="help">Predicted suspicion against the observed rate in a verification sample. Brier score '+cal.brier.toFixed(3)+', expected calibration error '+pct(cal.ece,1)+' points. Points below the diagonal mean the model over-predicts, as expected when a model from a high-prevalence cohort is used in a lower-prevalence population. The <button class="lnk" onclick="go(\'Trust check\')">trust check</button> recalibrates it.</p></div></div>'+
+    '<div class="card"><h2>Cases in this tool</h2><p>'+my.length+' decisions recorded; the clinician agreed with the suggestion in '+(my.length?pct(ag/my.length):0)+'%. Overrides: '+(Object.keys(reasons).length?Object.keys(reasons).map(function(k){ return esc(k)+' ('+reasons[k]+')'; }).join('; '):'none yet')+'.</p>'+
+    '<p class="help">Outcome measures for the pilot: completed screenings, timely attendance, recall and follow-up completion, referral completion and time to specialist, confirmed findings among referrals (PPV), stage at diagnosis, cessation enrolment, clinician agreement and calibration.</p></div>';
+  $('app').innerHTML=h;
+}
+function calib(pairs){
+  var bins=[]; for(var i=0;i<10;i++) bins.push({n:0,p:0,y:0});
+  var brier=0; pairs.forEach(function(q){ var b=Math.min(9,Math.floor(q[0]*10)); bins[b].n++; bins[b].p+=q[0]; bins[b].y+=q[1]; brier+=Math.pow(q[0]-q[1],2); });
+  var ece=0, N=pairs.length; bins.forEach(function(b){ if(b.n){ ece+=b.n/N*Math.abs(b.p/b.n-b.y/b.n); } });
+  return {bins:bins.filter(function(b){ return b.n>=sup(); }).map(function(b){ return [b.p/b.n,b.y/b.n,b.n]; }), brier:brier/N, ece:ece};
+}
+function calSvg(c,c2){
+  var S2=220, m=30, X=function(v){ return m+v*(S2-m-8); }, Y=function(v){ return S2-m-v*(S2-m-8); };
+  var poly=function(bs,col){ return '<polyline fill="none" stroke="'+col+'" stroke-width="2" points="'+bs.map(function(b){ return X(b[0]).toFixed(1)+','+Y(b[1]).toFixed(1); }).join(' ')+'"/>'+bs.map(function(b){ return '<circle cx="'+X(b[0]).toFixed(1)+'" cy="'+Y(b[1]).toFixed(1)+'" r="3.5" fill="'+col+'"/>'; }).join(''); };
+  return '<svg class="svgc" viewBox="0 0 '+S2+' '+S2+'" width="100%" style="max-width:300px" role="img" aria-label="Calibration plot"><rect x="'+m+'" y="8" width="'+(S2-m-8)+'" height="'+(S2-m-8)+'" fill="#F8FAFA" stroke="#D5DEDF"/>'+
+    '<line x1="'+X(0)+'" y1="'+Y(0)+'" x2="'+X(1)+'" y2="'+Y(1)+'" stroke="#9AA8AB" stroke-dasharray="4 3"/>'+poly(c.bins,'#B42318')+(c2?poly(c2.bins,'#0B7A75'):'')+
+    '<text x="'+(S2/2+10)+'" y="'+(S2-4)+'" font-size="10" text-anchor="middle" fill="#56676B">Predicted</text><text x="10" y="'+(S2/2-10)+'" font-size="10" text-anchor="middle" fill="#56676B" transform="rotate(-90 10 '+(S2/2-10)+')">Observed</text>'+
+    [0,0.5,1].map(function(t){ return '<text x="'+X(t)+'" y="'+(S2-m+12)+'" font-size="9" text-anchor="middle" fill="#56676B">'+t+'</text><text x="'+(m-4)+'" y="'+(Y(t)+3)+'" font-size="9" text-anchor="end" fill="#56676B">'+t+'</text>'; }).join('')+'</svg>'+
+    (c2?'<div class="legend"><span><i style="background:#B42318"></i>Before</span><span><i style="background:#0B7A75"></i>After local recalibration</span></div>':'');
+}
+
+/* =====================================================================
+   SITE TRUST CHECK: local sample, ROC, threshold, recalibration
+   ===================================================================== */
+var COH={'Internal test (Sri Lanka)':[82.5,88.1,55.4],'BD-Oral (Bangladesh)':[78.1,71.5,53.1],'SMART-OM (India)':[56.1,70.3,5.9]};
+var META=[['Internal (Sri Lanka)',0.916,0.683],['BD-Oral (Bangladesh)',0.786,0.629],['SMART-OM (India)',0.701,0.704]];
+var LOCAL={bd:{n:'High-prevalence clinic (like BD-Oral)',mu:1.12,prev:0.53,N:300},sm:{n:'Community screening (like SMART-OM)',mu:0.745,prev:0.06,N:1200},ad:{n:'Abu Dhabi pilot sample (simulated)',mu:1.0,prev:0.12,N:500}};
+function localSample(k){
+  var L=LOCAL[k], R=rng(k.charCodeAt(0)*131+7), out=[];
+  for(var i=0;i<L.N;i++){ var y=R()<L.prev?1:0, z=y?L.mu+gauss(R):gauss(R); out.push([sigmoid(-0.25+1.15*z),y]); }
+  return out;
+}
+function roc(pairs){
+  var s=pairs.slice().sort(function(a,b){ return b[0]-a[0]; }), P=s.filter(function(q){ return q[1]; }).length, N=s.length-P, tp=0, fp=0, pts=[[0,0,1]], auc=0, pf=0, pt=0;
+  s.forEach(function(q){ if(q[1]) tp++; else fp++; pts.push([fp/N,tp/P,q[0]]); auc+=(fp/N-pf)*(tp/P+pt)/2; pf=fp/N; pt=tp/P; });
+  return {pts:pts,auc:auc,P:P,N:N};
+}
+function opAt(pairs,thr){ var tp=0,fp=0,fn=0,tn=0; pairs.forEach(function(q){ var pos=q[0]>=thr; if(q[1]){ if(pos) tp++; else fn++; } else { if(pos) fp++; else tn++; } }); return {se:tp/(tp+fn),sp:tn/(tn+fp),ppv:tp/Math.max(1,tp+fp),npv:tn/Math.max(1,tn+fn),ref:(tp+fp)/pairs.length}; }
+function platt(pairs){ var a=0,b=1,lr=0.05; for(var it=0;it<400;it++){ var ga=0,gb=0; pairs.forEach(function(q){ var x=logit(q[0]), p=sigmoid(a+b*x), e=p-q[1]; ga+=e; gb+=e*x; }); a-=lr*ga/pairs.length; b-=lr*gb/pairs.length; } return {a:a,b:b}; }
+function trust(){
+  var T=S.tc=S.tc||{k:'sm',target:85,name:'SMART-OM (India)',se:56.1,sp:70.3,pv:5.9};
+  var pairs=localSample(T.k), R0=roc(pairs), cur=opAt(pairs,effThreshold());
+  var cand=R0.pts.filter(function(p){ return p[1]>=T.target/100; })[0]||R0.pts[R0.pts.length-1], sugg=clamp(cand[2],0.05,0.95), so=opAt(pairs,sugg);
+  var pl=platt(pairs), recal=pairs.map(function(q){ return [sigmoid(pl.a+pl.b*logit(q[0])),q[1]]; }), c1=calib(pairs), c2=calib(recal);
+  var h='<h1>Site trust check</h1>'+
+    '<div class="'+(DB.settings.siteChecked?'ok':'note')+'"><b>'+(DB.settings.siteChecked?'✓ Site check applied':'⚠ Site check not yet applied')+'.</b> Threshold in use: <b>'+effThreshold().toFixed(2)+'</b>'+(DB.settings.calib?' (set '+fmtD(DB.settings.calib.at)+' on '+esc(DB.settings.calib.sample)+', target sensitivity '+DB.settings.calib.target+'%)':' (development-cohort default)')+'.</div>'+
+    '<p class="help">The validated model kept its discrimination in a Bangladeshi cohort that resembled its training data, but its fixed threshold did not transfer to a low-prevalence Indian cohort, where only about one referral in ten was a true positive. Before go-live, each site scores a local sample with specialist outcomes, checks discrimination, picks its own threshold and recalibrates.</p>'+
+    '<div class="card"><h2>1. Score a local verification sample</h2><div class="seg">'+Object.keys(LOCAL).map(function(k){ return '<button class="'+(T.k===k?'on':'')+'" onclick="S.tc.k=\''+k+'\';render()">'+LOCAL[k].n+'</button>'; }).join('')+'</div>'+
+    '<p class="help" style="margin-top:8px">'+pairs.length+' simulated people, '+R0.P+' with a confirmed suspicious lesion (prevalence '+pct(R0.P/pairs.length,1)+'%).</p>'+
+    '<div class="grid2"><div>'+rocSvg(R0,effThreshold(),sugg,pairs)+'</div><div>'+
+      '<div class="kpi" style="margin-bottom:10px"><b>AUC '+R0.auc.toFixed(3)+'</b><span>Discrimination on the local sample</span></div>'+
+      '<table class="t"><thead><tr><th></th><th class="num">Current '+effThreshold().toFixed(2)+'</th><th class="num">Suggested '+sugg.toFixed(2)+'</th></tr></thead><tbody>'+
+      [['Sensitivity','se'],['Specificity','sp'],['PPV (referrals that are true)','ppv'],['NPV','npv'],['Referred per 1,000','ref']].map(function(r){ var f=function(o){ return r[1]==='ref'?Math.round(o.ref*1000):pct(o[r[1]],1)+'%'; }; return '<tr><td>'+r[0]+'</td><td class="num">'+f(cur)+'</td><td class="num"><b>'+f(so)+'</b></td></tr>'; }).join('')+'</tbody></table></div></div></div>'+
+    '<div class="card"><h2>2. Choose the operating point</h2><label class="f" for="tgt">Target sensitivity: <b id="tgv">'+T.target+'%</b></label><input type="range" id="tgt" min="60" max="97" value="'+T.target+'" onchange="S.tc.target=+this.value;render()" oninput="$(\'tgv\').textContent=this.value+\'%\'">'+
+    '<p class="help">Higher sensitivity misses fewer lesions but refers more people. The programme sets the target with clinicians; capacity of the specialist clinic is part of that choice.</p></div>'+
+    '<div class="card"><h2>3. Recalibrate</h2><div class="grid2"><div>'+calSvg(c1,c2)+'</div><div><p>Expected calibration error <b>'+pct(c1.ece,1)+'</b> before and <b>'+pct(c2.ece,1)+'</b> points after Platt scaling on the local sample (a = '+pl.a.toFixed(2)+', b = '+pl.b.toFixed(2)+').</p><p class="help">Recalibration makes the displayed percentage mean what it says locally. It does not change which patients rank higher, so AUC is unchanged.</p></div></div></div>'+
+    '<div class="card"><h2>4. Apply</h2>'+(can('admin')?'<button class="btn p" onclick="applySite('+sugg.toFixed(3)+')">Apply threshold '+sugg.toFixed(2)+' to this site</button> <button class="btn q" onclick="DB.settings.threshold=0.5;DB.settings.siteChecked=false;DB.settings.calib=null;audit(\'Threshold reset\',\'0.50\',\'Site governance\');saveDB();render()">Reset to 0.50</button><p class="tiny">Needs clinical sign-off. The change is written to the data-use log and shown on every result.</p>':needRole('admin'))+'</div>'+
+    '<div class="card"><h2>What the published validation says (manuscript values)</h2><p class="help">PPV at threshold 0.50 for each validation cohort. Move the sliders to try another population.</p><div class="row">'+Object.keys(COH).map(function(n){ return '<button class="btn sm '+(T.name===n?'p':'')+'" onclick="S.tc.name=\''+n+'\';S.tc.se='+COH[n][0]+';S.tc.sp='+COH[n][1]+';S.tc.pv='+COH[n][2]+';render()">'+n+'</button>'; }).join('')+'</div>'+
+    ['pv:Prevalence:100','se:Sensitivity:100','sp:Specificity:100'].map(function(s){ var a=s.split(':'); return '<label class="f" for="pc'+a[0]+'">'+a[1]+': <b id="pv_'+a[0]+'">'+T[a[0]]+'</b>%</label><input type="range" id="pc'+a[0]+'" min="0.5" max="99.5" step="0.1" value="'+T[a[0]]+'" oninput="S.tc.'+a[0]+'=+this.value;S.tc.name=\'Custom\';$(\'pv_'+a[0]+'\').textContent=this.value;$(\'ppvout\').innerHTML=ppvHtml()">'; }).join('')+
+    '<div id="ppvout">'+ppvHtml()+'</div></div>'+
+    '<div class="card"><h2>How much does the model lean on habit data?</h2><p class="help">Screening AUC with real metadata against an uninformative metadata vector at inference (manuscript Table VI).</p>'+
+    META.map(function(m){ return '<b>'+m[0]+'</b><div class="bar-h"><span>Real metadata</span><div class="tr"><i style="width:'+(m[1]*100)+'%"></i></div><b>'+m[1].toFixed(3)+'</b></div><div class="bar-h"><span>Uninformative</span><div class="tr"><i class="g" style="width:'+(m[2]*100)+'%"></i></div><b>'+m[2].toFixed(3)+'</b></div>'; }).join('')+
+    '<p class="help">Habit data helped where the population resembled the training cohort and added nothing in the low-prevalence cohort. Run this test on the local sample before trusting the metadata branch.</p></div>';
+  $('app').innerHTML=h;
+}
+function ppvHtml(){ var t=S.tc, se=t.se/100, sp=t.sp/100, pv=t.pv/100, tp=1000*se*pv, fp=1000*(1-sp)*(1-pv), ref=tp+fp;
+  return '<div class="grid" style="margin-top:10px">'+kpi(pct(tp/ref,1)+'%','PPV: referrals that are true positives')+kpi(Math.round(ref),'Referrals per 1,000 screened')+kpi(Math.round(fp),'False positives per 1,000')+kpi(tp>0?'1 in '+Math.round(ref/tp):'-','True positives among referrals')+'</div>'; }
+function rocSvg(R0,thr,sugg,pairs){
+  var W=260, m=30, X=function(v){ return m+v*(W-m-8); }, Y=function(v){ return W-m-v*(W-m-8); };
+  var step=Math.max(1,Math.floor(R0.pts.length/200)), pts=R0.pts.filter(function(p,i){ return i%step===0; }).concat([R0.pts[R0.pts.length-1]]);
+  var dot=function(t,col,l){ var o=opAt(pairs,t); return '<circle cx="'+X(1-o.sp).toFixed(1)+'" cy="'+Y(o.se).toFixed(1)+'" r="5" fill="'+col+'" stroke="#fff" stroke-width="1.5"><title>'+l+'</title></circle>'; };
+  return '<svg class="svgc" viewBox="0 0 '+W+' '+W+'" width="100%" style="max-width:320px" role="img" aria-label="ROC curve, AUC '+R0.auc.toFixed(3)+'"><rect x="'+m+'" y="8" width="'+(W-m-8)+'" height="'+(W-m-8)+'" fill="#F8FAFA" stroke="#D5DEDF"/><line x1="'+X(0)+'" y1="'+Y(0)+'" x2="'+X(1)+'" y2="'+Y(1)+'" stroke="#9AA8AB" stroke-dasharray="4 3"/>'+
+    '<polyline fill="none" stroke="#0B7A75" stroke-width="2.2" points="'+pts.map(function(p){ return X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1); }).join(' ')+'"/>'+dot(thr,'#B42318','Current threshold')+dot(sugg,'#0B7A75','Suggested threshold')+
+    '<text x="'+(W/2+10)+'" y="'+(W-4)+'" font-size="10" text-anchor="middle" fill="#56676B">1 − specificity</text><text x="10" y="'+(W/2-10)+'" font-size="10" text-anchor="middle" fill="#56676B" transform="rotate(-90 10 '+(W/2-10)+')">Sensitivity</text></svg>'+
+    '<div class="legend"><span><i style="background:#B42318"></i>Current threshold</span><span><i style="background:#0B7A75"></i>Suggested</span></div>';
+}
+function applySite(t){ DB.settings.threshold=+t; DB.settings.siteChecked=true; DB.settings.calib={at:new Date().toISOString(),sample:LOCAL[S.tc.k].n,target:S.tc.target};
+  audit('Site threshold applied',t.toFixed?t.toFixed(2):String(t)+' on '+LOCAL[S.tc.k].n,'Site governance; clinical sign-off'); saveDB(); toast('Threshold '+(+t).toFixed(2)+' applied'); render(); }
+
+/* =====================================================================
+   GOVERNANCE: model card, connection, data-use log, safety, pilot
+   ===================================================================== */
+function governance(){
+  var tab=S.sub.gov||'card';
+  var tabs=[['card','Model card'],['conn','Model connection'],['log','Data-use log'],['safe','Privacy and safety'],['pilot','Pilot and roadmap']];
+  var h='<h1>Governance</h1><div class="tabs" role="tablist">'+tabs.map(function(t){ return '<button role="tab" aria-selected="'+(tab===t[0])+'" class="'+(tab===t[0]?'on':'')+'" onclick="S.sub.gov=\''+t[0]+'\';render()">'+t[1]+'</button>'; }).join('')+'</div>';
+  h+={card:govCard,conn:govConn,log:govLog,safe:govSafe,pilot:govPilot}[tab]();
+  $('app').innerHTML=h;
+}
+function gc(t,b){ return '<div class="card"><h2>'+t+'</h2>'+b+'</div>'; }
+function ul(a){ return '<ul style="padding-left:1.1em;margin:0">'+a.map(function(x){ return '<li style="margin:4px 0">'+x+'</li>'; }).join('')+'</ul>'; }
+function govCard(){
+  var i=MODEL.info();
+  return '<div class="'+(i.simulated?'note':'ok')+'">Running: <b>'+esc(i.name)+'</b> ('+esc(i.version)+'). The figures below are from the manuscript, not from this prototype.</div>'+
+    '<div class="grid2">'+gc('Intended use',ul(['Screening aid for clinicians, registered nurses and authorized screeners','Adults 18 and over; white-light smartphone or intraoral-camera photos','Output: four-class estimate (Healthy, Benign, OPMD, oral cancer) and a suspicion signal for refer or not','Not for diagnosis, not for self-use by the public, not for children']))+
+    gc('Model',ul(['EfficientNet-B4 image encoder, 5-fold ensemble with 8-view test-time augmentation','Lesion-guided attention: masks supervise an attention decoder during training only','XGBoost metadata branch on age, sex, smoking, alcohol and chewing','EpiPrior: training-only constraint that exposed groups receive more suspicion than unexposed groups']))+'</div>'+
+    gc('Validation (screening, threshold 0.50)','<div class="tw"><table class="t"><thead><tr><th>Cohort</th><th class="num">Images</th><th class="num">Suspicious</th><th class="num">AUC</th><th class="num">Sensitivity</th><th class="num">Specificity</th></tr></thead><tbody>'+
+      '<tr><td>Sri Lanka internal test</td><td class="num">414</td><td class="num">55.4%</td><td class="num">0.916</td><td class="num">82.5%</td><td class="num">88.1%</td></tr>'+
+      '<tr><td>BD-Oral, Bangladesh (external)</td><td class="num">209</td><td class="num">53.1%</td><td class="num">0.786</td><td class="num">78.1%</td><td class="num">71.5%</td></tr>'+
+      '<tr><td>SMART-OM, India (external)</td><td class="num">2,541</td><td class="num">5.9%</td><td class="num">0.701</td><td class="num">56.1%</td><td class="num">70.3%</td></tr></tbody></table></div><p class="help">Internal four-class accuracy 72.4% (balanced 61.5%). Development: 2,745 images from 672 patients in Sri Lanka.</p>')+
+    '<div class="grid2">'+gc('Known limitations',ul(['Small cancer class (129 training, 19 internal test, 20 SMART-OM images); cancer F1 44%','Threshold did not transfer to a low-prevalence population: local calibration is required','Metadata helped only where habits and case mix resembled training','Trained at a single hospital; no prospective evaluation yet','Not validated in children or in Gulf populations; habit variables defined differently across cohorts']))+
+    gc('How the app handles them',ul(['Screening signal is primary; the cancer percentage is labelled indicative','Site trust check and recalibration before go-live; threshold shown on every result','Uniform-metadata comparison shown per patient when the model returns it','Clinician decides; red flags override; overrides are logged and fed back','Under 18: no score, Well-Child Visit pathway']))+'</div>';
+}
+function govConn(){
+  var s=DB.settings;
+  return '<div class="card"><h2>Model connection</h2><p class="help">The prototype ships with a simulator. Point it at a model service to replace the simulator; photos and the patient history are then sent to that service only. The service\'s model name is shown on every result.</p>'+
+    (can('admin')?'<label class="f" for="be">Backend</label><select id="be">'+opts([['demo','Demo simulator (no data leave the browser)'],['api','Connected model service (HTTPS)']],s.backend)+'</select>'+
+    '<label class="f" for="au">Endpoint base URL</label><input type="url" id="au" placeholder="https://your-space.hf.space" value="'+esc(s.apiUrl)+'">'+
+    '<label class="f" for="ak">Access token (optional)</label><input type="text" id="ak" value="'+esc(s.apiKey)+'" autocomplete="off">'+
+    '<div class="row" style="margin-top:12px"><button class="btn p" onclick="saveConn()">Save</button><button class="btn" onclick="testConn()">Test connection</button></div><div id="ctest"></div>':needRole('admin'))+'</div>'+
+    gc('API contract','<pre style="white-space:pre-wrap;font-size:.85rem;background:#F8FAFA;padding:10px;border-radius:6px;overflow:auto">GET  /health   → {"status":"ok","model_version":"..."}\nPOST /predict  multipart/form-data\n  image    : JPEG\n  metadata : {"age":56,"sex":"Male","smoking":0,"alcohol":0,"chewing":1}\n  roi      : [ {type, shape, pts:[[x,y],...]} ]   (optional, 0..1 coords)\n→ {"model_version":"oralguard-1.0",\n   "probs":{"Healthy":..,"Benign":..,"OPMD":..,"OCA":..},\n   "probs_sd":{...}, "suspicion":0.71, "suspicion_sd":0.04,\n   "suspicion_uniform_meta":0.52,\n   "gradcam_png":"&lt;base64&gt;"}</pre><p class="help">A reference FastAPI server (server.py) that loads the five fold models and the XGBoost metadata models is provided with this prototype.</p>');
+}
+function saveConn(){ var s=DB.settings; s.backend=$('be').value; s.apiUrl=$('au').value.trim(); s.apiKey=$('ak').value.trim(); audit('Model connection changed',s.backend+(s.apiUrl?' '+s.apiUrl:''),'Model governance'); saveDB(); toast('Saved'); render(); }
+async function testConn(){ var u=$('au').value.trim().replace(/\/+$/,''), o=$('ctest'); if(!u){ o.innerHTML='<div class="note">Enter a URL first.</div>'; return; } o.innerHTML='<p class="help">Testing…</p>';
+  try{ var r=await fetch(u+'/health'); var j=await r.json(); o.innerHTML='<div class="ok">Connected: '+esc(j.model_version||j.status||'ok')+'</div>'; }catch(e){ o.innerHTML='<div class="warn">Could not reach '+esc(u)+'/health ('+esc(e.message)+'). Check the URL, that the server is running, and that it allows CORS from this site.</div>'; } }
+function govLog(){
+  return '<div class="card"><div class="row sp"><h2 style="margin:0">Data-use log</h2><button class="btn sm" onclick="exportLog()">Export CSV</button></div><p class="help">Every access to or use of personal data in this browser: who (role), what, and for what purpose. In production this log is server-side and tamper-evident.</p>'+
+    '<div class="tw"><table class="t audit"><thead><tr><th>Time</th><th>Role</th><th>Action</th><th>Data</th><th>Purpose</th></tr></thead><tbody>'+(DB.audit.length?DB.audit.slice(0,120).map(function(a){ return '<tr><td style="white-space:nowrap">'+fmtDT(a.t)+'</td><td>'+esc(a.role)+'</td><td>'+esc(a.action)+'</td><td>'+esc(a.data)+'</td><td>'+esc(a.purpose)+'</td></tr>'; }).join(''):'<tr><td colspan="5" class="help">Nothing logged yet. Run a screening.</td></tr>')+'</tbody></table></div></div>';
+}
+function exportLog(){ var rows=[['time','role','action','data','purpose']].concat(DB.audit.map(function(a){ return [a.t,a.role,a.action,a.data,a.purpose]; })); download('oralguard_data_use_log.csv','data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(function(r){ return r.map(function(x){ return '"'+String(x).replace(/"/g,'""')+'"'; }).join(','); }).join('\n'))); }
+function govSafe(){
+  return '<div class="grid2">'+gc('Privacy by design',ul(['Pseudonymous case IDs; no names or Emirates ID in this tool','Granular consent: photos, data use, contact, and model improvement are separate choices','Data minimization: the model receives one photo and five fields','In this prototype everything stays in the browser; production stores data in-country on approved infrastructure','Role-based access; every use written to the data-use log']))+
+    gc('Clinical safety',ul(['The clinician decides; overrides are expected and recorded with a reason','Red flags force referral whatever the score','Neutral wording: "screening signal", "referral suggested", never "cancer detected"','Uncertainty, threshold, calibration status and missing data shown on every result','Under 18: no score; Well-Child Visit route']))+'</div>'+
+    gc('Regulatory alignment (to confirm with the Department of Health)',ul(['Abu Dhabi Department of Health policy on the use of AI in healthcare','Abu Dhabi Healthcare Information and Cyber Security Standard (ADHICS)','UAE Federal Law No. 2 of 2019 on ICT in health fields (health data kept in the UAE)','Software as a medical device: classification and registration before clinical use','Integration with the Abu Dhabi health information exchange (Malaffi) under a data-sharing agreement']))+
+    gc('Equity',ul(['Population safeguards show reach, uptake, referral and error rates by area, language, age and sex','Small cells are suppressed','Patient materials in Arabic, English, Bangla, Urdu and Hindi, with native-speaker review before use','Habit questions cover Gulf (dokha, midwakh, shisha) and South Asian (betel quid, areca nut, gutka, naswar) practices']))+
+    '<div class="card"><h2>Reset</h2><p class="help">Clears saved demo cases, outreach status, settings and the log in this browser.</p><button class="btn d" onclick="if(confirm(\'Reset all demo data in this browser?\')){resetDemo()}">Reset demo data</button></div>';
+}
+function govPilot(){
+  return gc('Proposed 6-month pilot in Abu Dhabi',ul(['Sites: 2 to 3 primary care centres or dental clinics serving areas with high betel-quid, smokeless-tobacco or dokha use, plus one specialist oral medicine service for tele-review','Month 0 to 1: ethics, data-sharing agreement, local verification sample (about 300 to 500 people with specialist examination) for the site trust check','Month 2 to 6: supervised use by trained screeners; specialist reviews every flagged case and a random sample of routine ones','Inclusion: adults attending adult comprehensive screening or targeted outreach; children through the Well-Child Visit route only']))+
+    gc('Pilot measures',ul(['Completed screenings and reach by segment','Referral completion and time to specialist','Timely attendance, recall and follow-up completion','Confirmed OPMD and cancer among referrals (PPV), stage at diagnosis','Missed lesions found at recall (false negatives)','Clinician agreement and override reasons','Calibration (Brier, calibration error) and local AUC','Cessation enrolment; user trust and usability']))+
+    gc('Roadmap','<ol class="path"><li><b>Now: prototype</b><span class="help">Full workflow, simulator, published model connection contract</span></li><li><b>Connect the trained model</b><span class="help">Hosted inference server with the 5-fold ensemble and Grad-CAM</span></li><li><b>Local validation and calibration</b><span class="help">Site trust check on an Abu Dhabi verification sample</span></li><li><b>Supervised pilot</b><span class="help">HIE integration, SMS and WhatsApp gateway, specialist tele-review</span></li><li><b>Retrain and scale</b><span class="help">Consented local annotations become lesion masks for fine-tuning; regulatory submission</span></li></ol>')+
+    gc('Path to sustainability',ul(['Per-site subscription for public and private primary care networks, priced per screening','Lower cost per person than specialist visits: tele-review sends only those who need it','Fits existing programmes (adult comprehensive screening, Well-Child Visit) instead of creating a new one']));
+}
+
+/* ---------- guide, reset, init ---------- */
+function openGuide(){
+  $('dlgroot').innerHTML='<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="gt" onclick="if(event.target===this)this.parentNode.innerHTML=\'\'"><div class="card"><h2 id="gt">3-minute demo</h2><ol class="path">'+
+    '<li><b>Screener: load Case C</b><span class="help">Home → Case C. Step through consent, patient and risk factors.</span></li>'+
+    '<li><b>Photos</b><span class="help">Try Live camera, Phone camera app or Upload; check the preview and quality chips.</span></li>'+
+    '<li><b>Annotate</b><span class="help">Outline the red-and-white lesion, choose its type.</span></li>'+
+    '<li><b>Result</b><span class="help">Tier, four-class estimate, attention map, why, reliability, pathway. Save the decision.</span></li>'+
+    '<li><b>Letter and prevention card</b><span class="help">Switch the card to Bangla or Arabic.</span></li>'+
+    '<li><b>Specialist reviewer: Cases</b><span class="help">Review a case awaiting tele-review.</span></li>'+
+    '<li><b>Outreach</b><span class="help">Open a person: why flagged, pathway, message in their language.</span></li>'+
+    '<li><b>Population safeguards and Outcomes</b><span class="help">Segment rates, &lt;10 suppression, funnel, calibration.</span></li>'+
+    '<li><b>Programme admin: Trust check</b><span class="help">Community sample, choose sensitivity, apply a local threshold.</span></li></ol>'+
+    '<button class="btn p" onclick="$(\'dlgroot\').innerHTML=\'\'">Close</button></div></div>';
+  $('dlgroot').querySelector('.btn.p').focus();
+}
+function resetDemo(){ if(canStore){ try{ localStorage.removeItem(STORE_KEY); }catch(e){} } DB=freshDB(); POP=null; S={role:null,view:'Home',wiz:null,sub:{},sel:null}; saveDB(); render(); toast('Demo reset'); }
+document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ var r=$('dlgroot'); if(r&&r.innerHTML){ r.innerHTML=''; } } });
+window.addEventListener('pagehide',stopCam);
+document.addEventListener('visibilitychange',function(){ if(document.hidden) stopCam(); });
+loadDB(); saveDB(); render();
+</script>
+</body>
+</html>

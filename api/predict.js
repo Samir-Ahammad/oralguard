@@ -10,6 +10,9 @@ import { GEMINI_API_KEY, GEMINI_MODEL, MODEL_VERSION, API_TOKEN, PHOTO_ONLY_CHEC
 
 const CLASSES = ["Healthy", "Benign", "OPMD", "OCA"];
 
+// Message shown in the app when the photo does not show any part of the mouth. Edit the text here.
+const NOT_ORAL_MESSAGE = "Not an image that can be diagnosed. Please provide a proper image of the mouth.";
+
 const PROMPT = (context, roi) => `You are assisting a trained oral-health screener. Assess ONE white-light intraoral photograph
 for oral cancer screening. This is a screening aid, not a diagnosis.
 
@@ -24,13 +27,14 @@ Classify the visible oral mucosa into four classes and give probabilities that s
 
 Rules:
 - Judge mainly from the image. Use the history only to adjust borderline cases, as an experienced clinician would.
-- If the photo is not an intraoral photograph, or is too blurred or dark to assess, say so and keep probabilities uncertain.
+- FIRST decide "oral_visible": true only if some part of the mouth is clearly visible (lips, oral mucosa, tongue, gums, teeth, palate, floor of mouth). If none is visible (e.g. a face from a distance, another body part, an object, a document, a screenshot, an animal), set "oral_visible": false and leave the other fields empty.
+- If the mouth is visible but the photo is too blurred or dark to assess, set image_quality "poor" and keep probabilities uncertain.
 - The clinician may have outlined regions of concern (0..1 coordinates): ${roi}
 - "suspicion" = probability that the lesion needs specialist referral (OPMD or OCA).
 - Give regions you looked at as box_2d [ymin, xmin, ymax, xmax] on a 0-1000 scale.
 
 Return ONLY JSON with this shape:
-{"intraoral": true, "image_quality": "good|fair|poor",
+{"oral_visible": true, "intraoral": true, "image_quality": "good|fair|poor",
  "probs": {"Healthy": 0.0, "Benign": 0.0, "OPMD": 0.0, "OCA": 0.0},
  "suspicion": 0.0,
  "lesion_type": "most probable specific lesion name, or 'No lesion seen'",
@@ -105,6 +109,7 @@ export async function POST(request) {
     const roi = roiRaw && roiRaw !== "[]" ? String(roiRaw).slice(0, 2000) : "none";
 
     const j = await askGemini(b64, mime, PROMPT(contextText(meta, hist, true), roi));
+    if (j.oral_visible === false) return json({ not_assessable: true, message: NOT_ORAL_MESSAGE, model_version: MODEL_VERSION });
     const p = normProbs(j.probs);
     let s = j.suspicion != null ? +j.suspicion : p[2] + p[3];
     s = Math.min(1, Math.max(0, isNaN(s) ? p[2] + p[3] : s));

@@ -6,7 +6,7 @@
  * Uses the Gemini API (general-purpose model, NOT the validated OralGuard model).
  * The key stays on the server: set GEMINI_API_KEY in Vercel environment variables.
  */
-import { GEMINI_API_KEY, GEMINI_MODEL, MODEL_VERSION, API_TOKEN, PHOTO_ONLY_CHECK, json } from "./_config.js";
+import { GEMINI_API_KEY, GEMINI_MODEL, GEMINI_FALLBACK_MODEL, MODEL_VERSION, API_TOKEN, PHOTO_ONLY_CHECK, json } from "./_config.js";
 
 const CLASSES = ["Healthy", "Benign", "OPMD", "OCA"];
 
@@ -62,27 +62,62 @@ function contextText(meta, hist, withHistory) {
   return lines.join("\n");
 }
 
-async function askGemini(b64, mime, prompt) {
+// One call to one model. Throws [status, message, retryable].
+async function callModel(model, b64, mime, prompt, timeoutMs) {
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), timeoutMs);
   let r;
   try {
-    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
-      method: "POST",
+    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: "POST", signal: ctl.signal,
       headers: { "content-type": "application/json", "x-goog-api-key": GEMINI_API_KEY },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mime, data: b64 } }] }],
         generationConfig: { temperature: 0.1, response_mime_type: "application/json" },
       }),
     });
-  } catch (e) { throw [502, "Could not reach the Gemini API"]; }
-  if (r.status === 429) throw [429, "Gemini rate limit reached. Wait a minute and try again."];
-  if (r.status === 404) throw [502, `Gemini model '${GEMINI_MODEL}' not found. Check GEMINI_MODEL against the code name in AI Studio.`];
-  if (!r.ok) throw [502, `Gemini error ${r.status}: ${(await r.text()).slice(0, 300)}`];
+  } catch (e) { throw [504, "The Gemini API did not answer in time", true]; }
+  finally { clearTimeout(t); }
+  if (r.status === 503 || r.status === 500 || r.status === 502) throw [503, `Gemini model '${model}' is overloaded or unavailable (${r.status})`, true];
+  if (r.status === 429) throw [429, "Gemini rate limit or daily quota reached. Wait a minute, or try again after the daily reset.", true];
+  if (r.status === 404) throw [502, `Gemini model '${model}' not found. Check GEMINI_MODEL against the code name in AI Studio.`, true];
+  if (!r.ok) throw [502, `Gemini error ${r.status}: ${(await r.text()).slice(0, 300)}`, false];
   try {
     const j = await r.json();
     let text = j.candidates[0].content.parts.map((p) => p.text || "").join("").trim();
     text = text.replace(/^```(json)?/, "").replace(/```$/, "").trim();
     return JSON.parse(text);
-  } catch (e) { throw [502, "Gemini returned an unreadable answer. Try again."]; }
+  } catch (e) { throw [502, "Gemini returned an unreadable answer", true]; }
+}
+
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+
+// Tries the main model, then the backup model.
+// Stays inside the 60-second function limit.
+async function askGemini(b64, mime, prompt) {
+  const start = Date.now(), budget = 52000;
+  // Main model once; if it fails, go straight to the backup model (with one retry),
+  // then one last try on the main model.
+  const hasBackup = GEMINI_FALLBACK_MODEL && GEMINI_FALLBACK_MODEL !== GEMINI_MODEL;
+  const plan = hasBackup
+    ? [[GEMINI_MODEL, 0], [GEMINI_FALLBACK_MODEL, 0], [GEMINI_FALLBACK_MODEL, 1500], [GEMINI_MODEL, 1500]]
+    : [[GEMINI_MODEL, 0], [GEMINI_MODEL, 1500], [GEMINI_MODEL, 3000]];
+  let last = [503, "Gemini is unavailable", true];
+  for (const [model, wait] of plan) {
+    if (wait) await sleep(wait);
+    const left = budget - (Date.now() - start);
+    if (left < 6000) break;
+    try {
+      const out = await callModel(model, b64, mime, prompt, Math.min(25000, left));
+      out.__model = model;
+      return out;
+    } catch (e) {
+      last = Array.isArray(e) ? e : [502, String(e), true];
+      console.log(`[oralguard] ${model}: ${last[1]}`);
+      if (!last[2]) break;
+      if (last[0] === 404) continue; // wrong main model name: go straight on to the fallback
+    }
+  }
+  throw [last[0], last[1] + ". Tried " + (GEMINI_FALLBACK_MODEL ? "the main and fallback models" : "the main model") + " several times."];
 }
 
 function normProbs(p) {
@@ -129,6 +164,7 @@ export async function POST(request) {
       differential: Array.isArray(j.differential) ? j.differential.slice(0, 3) : [],
       findings: j.findings || "", image_quality: j.image_quality || null, warning,
       regions: Array.isArray(j.regions) ? j.regions.slice(0, 6) : [],
+      engine_model: j.__model || GEMINI_MODEL,
     });
   } catch (e) {
     if (Array.isArray(e)) return json({ detail: e[1] }, e[0]);

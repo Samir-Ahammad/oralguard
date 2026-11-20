@@ -355,7 +355,7 @@ var MODEL = {
   predict:async function(d){
     if(DB.settings.backend==='api' && DB.settings.apiUrl){
       try{ return await apiPredict(d); }
-      catch(e){ if(e.notOral) throw e; var r=demoPredict(d); r.fallback='Model endpoint failed ('+(e.message||e)+'). Showing simulated output instead.'; return r; }
+      catch(e){ if(e.notOral) throw e; audit('AI model unavailable; demo result shown',d.id+': '+(e.name==='AbortError'?'no answer in time':(e.message||e)),'Screening'); var r=demoPredict(d); r.fallback='The AI model is busy right now, so this is a demo result, not an AI result.'; return r; }
     }
     return demoPredict(d);
   }
@@ -432,9 +432,9 @@ async function apiPredict(d){
     var g=d.imgs[i], blob=await (await fetch(g.src)).blob(), fd=new FormData();
     fd.append('image',blob,'photo'+(i+1)+'.jpg'); fd.append('metadata',JSON.stringify(meta)); fd.append('roi',JSON.stringify(g.ann||[])); fd.append('history',JSON.stringify({tobacco_types:d.tob||[], chewing_types:d.chewT||[], family_history:d.famhx, previous_opmd:d.prior, inherited_risk:d.genetic, last_exam:d.lastExam, photo_site:g.site||'', red_flags:d.flags||[]}));
     var headers={}; if(DB.settings.apiKey) headers['Authorization']='Bearer '+DB.settings.apiKey;
-    var ctl=new AbortController(), to=setTimeout(function(){ ctl.abort(); },60000);
+    var ctl=new AbortController(), to=setTimeout(function(){ ctl.abort(); },75000);
     var res=await fetch(url,{method:'POST',body:fd,headers:headers,signal:ctl.signal}); clearTimeout(to);
-    if(!res.ok) throw new Error('HTTP '+res.status);
+    if(!res.ok){ var em='HTTP '+res.status; try{ var ej=await res.json(); if(ej&&ej.detail) em=ej.detail; }catch(_){} throw new Error(em); }
     var j=await res.json(); MODEL._remoteVersion=j.model_version;
     if(j.not_assessable){ var er=new Error(j.message||'Not an image that can be diagnosed. Please provide a proper image of the mouth.'); er.notOral=true; er.photo=i+1; throw er; }
     var p=CLASSES.map(function(c){ return +(j.probs&&j.probs[c])||0; });
@@ -1209,8 +1209,8 @@ async function runModel(){
       $('app').innerHTML='<h1>Screening result</h1><div class="warn" role="alert" style="font-size:1.05rem"><b>Photo '+e.photo+': '+esc(e.message)+'</b></div><p class="help">No screening signal was calculated. Retake or replace the photo so that the lips, tongue, gums, teeth or inside of the mouth are clearly visible.</p><button class="btn p" onclick="S.wiz.step=4;S.wiz.d.result=null;render();">Back to photos</button>';
       return;
     }
-    r.tier=tierOf(r,d); r.threshold=effThreshold(); r.at=new Date().toISOString(); d.result=r;
-    audit('Screening signal calculated',d.id+': '+d.imgs.length+' photo(s), age, sex, smoking, alcohol, chewing'+(r.simulated?' (simulated)':' via '+r.model),'Screening; consented');
+    d.allowSim=false; r.tier=tierOf(r,d); r.threshold=effThreshold(); r.at=new Date().toISOString(); d.result=r;
+    audit('Screening signal calculated',d.id+': '+d.imgs.length+' photo(s), age, sex, smoking, alcohol, chewing'+(r.simulated?' (demo result)':' via '+r.model),'Screening; consented');
   }
   S.res={pv:d.result.top||0, heat:true, ann:true, alpha:0.5};
   saveDB(); render(); focusTop();
@@ -1232,7 +1232,7 @@ function resultView(){
   if(s>effThreshold()-0.08 && s<effThreshold()+0.08) rel.push('The signal is close to the threshold. Small changes in the photo could move the tier.');
   var nometa=r.susp_nometa!=null?'<div class="info">If the habit data were replaced with an uninformative vector, this signal would be <b>'+pct(r.susp_nometa)+'%</b> instead of <b>'+pct(s)+'%</b>. In validation, removing metadata lowered AUC by 0.233 internally and 0.157 in Bangladesh, and changed nothing in a low-prevalence Indian cohort. Check this site before relying on habit data.</div>':'';
   var pathway=pathwayFor(r.tier,d);
-  var h='<div class="row sp noprint"><h1 style="margin-bottom:.2em">Screening result <span class="tiny">'+d.id+'</span></h1><span class="chip '+(info.simulated?'a':'g')+'">'+(info.simulated?'⚠ Simulated output':'✓ '+esc(r.model))+'</span></div>'+
+  var h='<div class="row sp noprint"><h1 style="margin-bottom:.2em">Screening result <span class="tiny">'+d.id+'</span></h1><span class="chip '+(r.simulated?'a':'g')+'">'+(r.simulated?'⚠ Demo result':'✓ '+esc(r.model))+'</span></div>'+(r.fallback?'<div class="note">'+esc(r.fallback)+'</div>':'')+
     '<div class="steps">'+STEPS.map(function(x,i){ return '<div class="'+(i===6?'on':'done')+'">'+(i+1)+'. '+x+'</div>'; }).join('')+'</div>'+
     '<div class="grid2 w"><div>'+
       '<div class="tier" style="background:'+T.c+'"><span class="ic" aria-hidden="true">'+T.ic+'</span><div><b>'+T.t+'</b><span>'+T.s+'</span></div></div>'+
@@ -1246,8 +1246,7 @@ function resultView(){
     '<div class="grid2">'+
       '<div class="card"><h2>Why this signal</h2>'+(r.contrib?contribBars(r):'<p class="help">The connected model did not return attributions.</p>')+nometa+
       (d.flags.length?'<h3>Red flags recorded</h3><ul>'+d.flags.map(function(f){ return '<li>'+esc(f)+'</li>'; }).join('')+'</ul>':'')+'</div>'+
-      '<div class="card"><h2>Reliability and uncertainty</h2>'+(rel.length?'<ul style="padding-left:1.1em;margin:0">'+rel.map(function(x){ return '<li style="margin:4px 0">'+x+'</li>'; }).join('')+'</ul>':'<p class="help">No reliability warnings.</p>')+
-      '<h3>Data used for this result</h3><p class="help" style="margin:0"><b>Used by the model:</b> '+d.imgs.length+' photo(s), age, sex, smoking, alcohol, chewing habit.<br><b>Used for the pathway only:</b> red flags, family history, earlier lesion, genetic flag, language and channel.<br><b>Not used:</b> name, nationality, address, any data outside the consent given.</p></div>'+
+      '<div class="card"><h2>Data used for this result</h2><p class="help" style="margin:0"><b>Used by the model:</b> '+d.imgs.length+' photo(s), age, sex, smoking, alcohol, chewing habit.<br><b>Used for the pathway only:</b> red flags, family history, earlier lesion, genetic flag, language and channel.<br><b>Not used:</b> name, nationality, address, any data outside the consent given.</p></div>'+
     '</div>'+
     '<div class="card"><h2>Recommended pathway</h2><p class="help">Population rules from the programme set the pathway; this person\'s clinician decides. Timings are placeholders until the approved guideline values are loaded.</p><ol class="path">'+
       pathway.map(function(p){ return '<li><b>'+esc(p.t)+'</b><span class="help">'+esc(p.w)+(p.k!=='card'&&p.k!=='cessation'&&p.k!=='advice'?', due '+fmtD(p.due):'')+'</span></li>'; }).join('')+'</ol></div>'+
@@ -1272,7 +1271,7 @@ function gauge(s,sd,thr,col){
 }
 function contribBars(r){
   var tot=r.contrib.reduce(function(a,b){ return a+b[1]; },r.base||0), mx=Math.max.apply(0,r.contrib.map(function(c){ return Math.abs(c[1]); }));
-  return '<p class="help">'+(r.simulated?'How the simulator built the signal (additive parts).':'Image and metadata parts from the uniform-metadata test.')+'</p>'+
+  return '<p class="help">'+(r.simulated?'How the demo result was built (additive parts).':'Image and metadata parts from the uniform-metadata test.')+'</p>'+
     r.contrib.map(function(c){ return '<div class="contrib"><span>'+esc(c[0])+'</span><div class="tr"><i class="'+(c[1]<0?'n':'')+'" style="width:'+(Math.abs(c[1])/mx*100).toFixed(0)+'%"></i></div><b style="text-align:right">'+(c[1]>=0?'+':'')+pct(c[1])+'</b></div>'; }).join('')+
     (r.base?'<div class="contrib"><span class="tiny">Baseline</span><div></div><b style="text-align:right" class="tiny">+'+pct(r.base)+'</b></div>':'')+
     '<p class="tiny">Total '+pct(Math.min(tot,0.97))+' points (capped at 97).</p>';
@@ -1417,7 +1416,7 @@ function openCase(id){
     '<div class="viewer" style="margin-top:12px"><div class="stage" style="min-height:120px"><canvas id="cvc"></canvas></div>'+
     (c.imgs.length>1?'<div class="thumbs">'+c.imgs.map(function(g,k){ return '<button class="thumb" onclick="drawCaseImg(\''+c.id+'\','+k+')"><img src="'+(g.thumb||g.src)+'" alt="Photo '+(k+1)+'"></button>'; }).join('')+'</div>':'')+
     '<p class="tiny" style="color:#AFC3C5;padding:4px">'+c.imgs.map(function(g,k){ return 'Photo '+(k+1)+(g.site?' ('+esc(g.site)+')':'')+': '+(g.ann.length?g.ann.map(function(a){ return lt(a.type)[1]; }).join(', '):g.noLesion?'no visible lesion':'not annotated'); }).join('. ')+'</p></div>'+
-    (r.probs?'<h3>Model output'+(r.simulated?' (simulated)':'')+'</h3>'+CLASSES.map(function(cl,k){ return '<div class="pbar"><span>'+cl+'</span><div class="tr"><i style="width:'+pct(r.probs[k],1)+'%;background:'+CLASS_COL[k]+'"></i></div><b>'+pct(r.probs[k],1)+'%</b></div>'; }).join(''):'')+
+    (r.probs?'<h3>Model output'+(r.simulated?' (demo result)':'')+'</h3>'+CLASSES.map(function(cl,k){ return '<div class="pbar"><span>'+cl+'</span><div class="tr"><i style="width:'+pct(r.probs[k],1)+'%;background:'+CLASS_COL[k]+'"></i></div><b>'+pct(r.probs[k],1)+'%</b></div>'; }).join(''):'')+
     '<h3>Screener</h3><p>Smoking '+c.smoke+', chewing '+c.chew+', alcohol '+c.alcohol+'. '+(c.flags.length?'Red flags: '+esc(c.flags.join('; '))+'. ':'No red flags. ')+'Decision: <b>'+esc((c.decision||{}).action||'-')+'</b> ('+esc((c.decision||{}).agree||'-')+')'+((c.decision||{}).reason?', '+esc(c.decision.reason):'')+'.</p>'+
     (c.review?'<div class="ok"><b>Specialist review</b>: impression '+esc(c.review.impression)+', plan '+esc(c.review.plan)+(c.review.comment?'. '+esc(c.review.comment):'')+' ('+fmtD(c.review.at)+')</div>':'')+
     (c.outcome?'<div class="info"><b>Outcome recorded</b>: '+esc(c.outcome.result)+' ('+fmtD(c.outcome.at)+')</div>':'')+
